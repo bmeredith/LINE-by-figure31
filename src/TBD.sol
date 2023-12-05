@@ -2,6 +2,8 @@
 pragma solidity ^0.8.23;
 
 import {ERC721} from "solmate/tokens/ERC721.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 // implement DA from Web contract
 // add max qty
@@ -16,7 +18,7 @@ error NotTokenOwner();
 error PositionCurentlyTaken(uint256 x, uint256 y);
 error PositionNotMintable(uint256 x, uint256 y);
 
-contract TBD is ERC721 {
+contract TBD is ERC721, Ownable2Step {
 
     enum Direction {
         UP,
@@ -37,13 +39,14 @@ contract TBD is ERC721 {
         Direction direction;
         uint256 numMovements;
     }
-
+    
+    uint256 private _currentTokenId;
     mapping(bytes32 => bool) public _mintableCoordinates;
     mapping(uint256 => Token) public tokenIdToTokenInfo;
     
     uint256 public constant MAX_SUPPLY = 200;
 
-    constructor() ERC721A("Tbd", "TBD") { } 
+    constructor() ERC721("TBD", "TBD") Ownable(msg.sender) { } 
 
     // check uninitialized value of arrays pls
     uint256[25][25] board = [
@@ -92,7 +95,9 @@ contract TBD is ERC721 {
         // check if position is a mintable position*
         // check if position is taken*
         // check if y is less than 10 -> set direction to DOWN, else UP*
-        if(_nextTokenId() > MAX_SUPPLY) {
+
+        uint256 tokenId = _currentTokenId + 1;
+        if(tokenId > MAX_SUPPLY) {
             revert MaxSupply();
         }
 
@@ -105,7 +110,6 @@ contract TBD is ERC721 {
             revert PositionNotMintable(x, y);
         }
 
-        uint256 tokenId = _nextTokenId();
         board[x][y] = tokenId;
         tokenIdToTokenInfo[tokenId] = Token({
             initial: Coordinate({x: x, y: y}),
@@ -138,9 +142,9 @@ contract TBD is ERC721 {
 
     function getCoordinateHash(Coordinate memory coordinate) pure private returns(bytes32) {
         return keccak256(abi.encode(coordinate));
-    }
+    }    
 
-    function _startTokenId() override internal view virtual returns (uint256) {
-        return 1;
-    }
+    function tokenURI(
+        uint256 id
+    ) public view virtual override returns (string memory) {}
 }
