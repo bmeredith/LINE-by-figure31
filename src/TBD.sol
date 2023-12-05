@@ -15,7 +15,7 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 error MaxSupply();
 error NotTokenOwner();
-error PositionCurentlyTaken(uint256 x, uint256 y);
+error PositionCurrentlyTaken(uint256 x, uint256 y);
 error PositionNotMintable(uint256 x, uint256 y);
 
 contract TBD is ERC721, Ownable2Step {
@@ -39,17 +39,9 @@ contract TBD is ERC721, Ownable2Step {
         Direction direction;
         uint256 numMovements;
     }
-    
-    uint256 public currentTokenId;
-    mapping(bytes32 => bool) public _mintableCoordinates;
-    mapping(uint256 => Token) public tokenIdToTokenInfo;
-    
-    uint256 public constant MAX_SUPPLY = 200;
-
-    constructor() ERC721("TBD", "TBD") Ownable(msg.sender) { } 
 
     // check uninitialized value of arrays pls
-    uint256[25][25] board = [
+    uint256[25][25] public board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -77,6 +69,14 @@ contract TBD is ERC721, Ownable2Step {
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     ];
 
+    uint256 public currentTokenId = 1;
+    mapping(bytes32 => bool) public mintableCoordinates;
+    mapping(uint256 => Token) public tokenIdToTokenInfo;
+    
+    uint256 public constant MAX_SUPPLY = 200;
+
+    constructor() ERC721("TBD", "TBD") Ownable(msg.sender) { } 
+
     // over an hour
     // 1eth to 0.2 resting price??
     function mintAtRandom() external payable {
@@ -84,7 +84,9 @@ contract TBD is ERC721, Ownable2Step {
         // check if price matches current price from auction
         // keep track of available positions in an array?
         // on last mint, enable moving to be allowed
-        _mint(msg.sender, 1);
+
+        _mint(msg.sender, currentTokenId);
+        currentTokenId++;
     }
 
     // make multiple?
@@ -96,22 +98,21 @@ contract TBD is ERC721, Ownable2Step {
         // check if position is taken*
         // check if y is less than 10 -> set direction to DOWN, else UP*
 
-        uint256 tokenId = currentTokenId + 1;
-        if(tokenId > MAX_SUPPLY) {
+        if(currentTokenId + 1 > MAX_SUPPLY) {
             revert MaxSupply();
         }
 
         if(board[x][y] > 0) {
-            revert PositionCurentlyTaken(x, y); 
+            revert PositionCurrentlyTaken(x, y); 
         }
 
         bytes32 hash = getCoordinateHash(Coordinate({x: x, y: y}));
-        if(!_mintableCoordinates[hash]) {
+        if(!mintableCoordinates[hash]) {
             revert PositionNotMintable(x, y);
         }
 
-        board[x][y] = tokenId;
-        tokenIdToTokenInfo[tokenId] = Token({
+        board[x][y] = currentTokenId;
+        tokenIdToTokenInfo[currentTokenId] = Token({
             initial: Coordinate({x: x, y: y}),
             current: Coordinate({x: x, y: y}),
             timestamp: block.timestamp,
@@ -120,7 +121,8 @@ contract TBD is ERC721, Ownable2Step {
             numMovements: 0
         });
 
-        _mint(msg.sender, 1);
+        _mint(msg.sender, currentTokenId);
+        currentTokenId++;
     }
 
     // move up, left, right, down functions instead?
@@ -136,7 +138,7 @@ contract TBD is ERC721, Ownable2Step {
     function setInitialAvailableCoordinates(Coordinate[] memory coordinates) external {
         for(uint256 i=0;i < coordinates.length;i++) {
             bytes32 hash = getCoordinateHash(coordinates[i]);
-            _mintableCoordinates[hash] = true;
+            mintableCoordinates[hash] = true;
         }
     }
 
