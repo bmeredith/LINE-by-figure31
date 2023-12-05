@@ -30,20 +30,14 @@ contract TBDTest is Test {
     }
 
     function test_mint_revertWhenPositionIsNotMintable() public {
-        bytes32 hash = keccak256(abi.encode(TBD.Coordinate({x: 0, y: 0})));
-        bytes32 isMintableSlot = getIsMintableCoordinateSlot(hash);
-        bytes32 mockedIsMintableSlotValue = bytes32(abi.encode(false));
-        vm.store(address(tbd), isMintableSlot, mockedIsMintableSlotValue);
+        mockMintableCoordinate(0, 0, false);
 
         vm.expectRevert(abi.encodeWithSelector(PositionNotMintable.selector, 0, 0));
         tbd.mintAtPosition(0,0);
     }
 
     function test_mint_mintedCoordinateIsTokenIdOnBoard() public {
-        bytes32 hash = keccak256(abi.encode(TBD.Coordinate({x: 0, y: 0})));
-        bytes32 isMintableSlot = getIsMintableCoordinateSlot(hash);
-        bytes32 mockedIsMintableSlotValue = bytes32(abi.encode(true));
-        vm.store(address(tbd), isMintableSlot, mockedIsMintableSlotValue);
+        mockMintableCoordinate(0, 0, true);
 
         tbd.mintAtPosition(0,0);
 
@@ -55,6 +49,13 @@ contract TBDTest is Test {
         bytes32 currentTokenIdSlot = getCurrentTokenIdSlot();
         bytes32 mockedCurrentTokenId = bytes32(tokenId);
         vm.store(address(tbd), currentTokenIdSlot, mockedCurrentTokenId);
+    }
+
+    function mockMintableCoordinate(uint256 x, uint256 y, bool isMintable) private {
+        bytes32 hash = keccak256(abi.encode(TBD.Coordinate({x: x, y: y})));
+        bytes32 mintableCoordinateSlot = getIsMintableCoordinateSlot(hash);
+        bytes32 mockedIsMintableSlotValue = bytes32(abi.encode(isMintable));
+        vm.store(address(tbd), mintableCoordinateSlot, mockedIsMintableSlotValue);
     }
 
     function getIsMintableCoordinateSlot(bytes32 hash) private returns (bytes32) {
