@@ -14,9 +14,7 @@ contract TBDTest is Test {
     }
 
     function test_mint_revertWhenMaxSupplyReached() public {
-        bytes32 currentTokenIdSlot = getCurrentTokenIdSlot();
-        bytes32 mockedCurrentTokenId = bytes32(abi.encode(tbd.MAX_SUPPLY));
-        vm.store(address(tbd), currentTokenIdSlot, mockedCurrentTokenId);
+        mockCurrentTokenId(tbd.MAX_SUPPLY());
 
         vm.expectRevert(MaxSupply.selector);
         tbd.mintAtPosition(0,0);
@@ -39,6 +37,24 @@ contract TBDTest is Test {
 
         vm.expectRevert(abi.encodeWithSelector(PositionNotMintable.selector, 0, 0));
         tbd.mintAtPosition(0,0);
+    }
+
+    function test_mint_mintedCoordinateIsTokenIdOnBoard() public {
+        bytes32 hash = keccak256(abi.encode(TBD.Coordinate({x: 0, y: 0})));
+        bytes32 isMintableSlot = getIsMintableCoordinateSlot(hash);
+        bytes32 mockedIsMintableSlotValue = bytes32(abi.encode(true));
+        vm.store(address(tbd), isMintableSlot, mockedIsMintableSlotValue);
+
+        tbd.mintAtPosition(0,0);
+
+        uint256 value = getBoardPositionValue(0, 0);
+        assertEq(1, value);
+    }
+
+    function mockCurrentTokenId(uint256 tokenId) private {
+        bytes32 currentTokenIdSlot = getCurrentTokenIdSlot();
+        bytes32 mockedCurrentTokenId = bytes32(tokenId);
+        vm.store(address(tbd), currentTokenIdSlot, mockedCurrentTokenId);
     }
 
     function getIsMintableCoordinateSlot(bytes32 hash) private returns (bytes32) {
@@ -69,5 +85,14 @@ contract TBDTest is Test {
             .find();
 
         return bytes32(boardSlot);
+    }
+
+    function getBoardPositionValue(uint256 x, uint256 y) private returns (uint256) {
+        return stdstore
+            .target(address(tbd))
+            .sig("board(uint256,uint256)")
+            .with_key(x)
+            .with_key(y)
+            .read_uint();
     }
 }
