@@ -40,7 +40,7 @@ contract TBD is ERC721, Ownable2Step {
         uint256 numMovements;
     }
     
-    uint256 private _currentTokenId;
+    uint256 public currentTokenId;
     mapping(bytes32 => bool) public _mintableCoordinates;
     mapping(uint256 => Token) public tokenIdToTokenInfo;
     
@@ -96,7 +96,7 @@ contract TBD is ERC721, Ownable2Step {
         // check if position is taken*
         // check if y is less than 10 -> set direction to DOWN, else UP*
 
-        uint256 tokenId = _currentTokenId + 1;
+        uint256 tokenId = currentTokenId + 1;
         if(tokenId > MAX_SUPPLY) {
             revert MaxSupply();
         }
