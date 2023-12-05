@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import { ERC721A } from "ERC721A/ERC721A.sol";
+import {ERC721} from "solmate/tokens/ERC721.sol";
 
 // implement DA from Web contract
 // add max qty
@@ -16,7 +16,7 @@ error NotTokenOwner();
 error PositionCurentlyTaken(uint256 x, uint256 y);
 error PositionNotMintable(uint256 x, uint256 y);
 
-contract TBD is ERC721A {
+contract TBD is ERC721 {
 
     enum Direction {
         UP,
