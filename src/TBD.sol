@@ -11,6 +11,8 @@ import { ERC721A } from "ERC721A/ERC721A.sol";
 
 // be able to close out mint prior to 200 pieces being minted
 
+error MaxSupply();
+error NotTokenOwner();
 error PositionCurentlyTaken(uint256 x, uint256 y);
 error PositionNotMintable(uint256 x, uint256 y);
 
@@ -38,6 +40,8 @@ contract TBD is ERC721A {
 
     mapping(bytes32 => bool) public _mintableCoordinates;
     mapping(uint256 => Token) public tokenIdToTokenInfo;
+    
+    uint256 public constant MAX_SUPPLY = 200;
 
     constructor() ERC721A("Tbd", "TBD") { } 
 
@@ -82,11 +86,16 @@ contract TBD is ERC721A {
 
     // make multiple?
     function mintAtPosition(uint256 x, uint256 y) external payable {
-        // check supply
+        // check supply*
+        // check if mint is locked
         // check if price matches current price from auction
         // check if position is a mintable position*
         // check if position is taken*
         // check if y is less than 10 -> set direction to DOWN, else UP*
+        if(_nextTokenId() > MAX_SUPPLY) {
+            revert MaxSupply();
+        }
+
         if(board[x][y] > 0) {
             revert PositionCurentlyTaken(x, y); 
         }

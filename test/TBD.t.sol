@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import {Test, console2} from "forge-std/Test.sol";
-import {TBD} from "../src/TBD.sol";
+import "forge-std/Test.sol";
+import "../src/TBD.sol";
 
 contract TBDTest is Test {
+    using stdStorage for StdStorage;
+
     TBD private tbd;
 
     function setUp() public {
