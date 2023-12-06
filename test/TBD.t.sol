@@ -52,8 +52,8 @@ contract TBDTest is Test {
         tbd.mintAtPosition(0,12);
         tbd.mintAtPosition(0,13);
 
-        assertEq(true, tbd.getToken(1).direction == TBD.Direction.DOWN);
-        assertEq(true, tbd.getToken(2).direction == TBD.Direction.UP);
+        assertTrue(tbd.getToken(1).direction == TBD.Direction.DOWN);
+        assertTrue(tbd.getToken(2).direction == TBD.Direction.UP);
     }
 
     function mockCurrentTokenId(uint256 tokenId) private {
