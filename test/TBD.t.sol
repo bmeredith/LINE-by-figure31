@@ -45,6 +45,17 @@ contract TBDTest is Test {
         assertEq(1, value);
     }
 
+    function test_mint_mintedTokenHasCorrectDirection() public {
+        mockMintableCoordinate(0, 12, true);
+        mockMintableCoordinate(0, 13, true);
+
+        tbd.mintAtPosition(0,12);
+        tbd.mintAtPosition(0,13);
+
+        assertEq(true, tbd.getToken(1).direction == TBD.Direction.DOWN);
+        assertEq(true, tbd.getToken(2).direction == TBD.Direction.UP);
+    }
+
     function mockCurrentTokenId(uint256 tokenId) private {
         bytes32 currentTokenIdSlot = getCurrentTokenIdSlot();
         bytes32 mockedCurrentTokenId = bytes32(tokenId);
