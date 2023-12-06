@@ -19,7 +19,6 @@ error PositionCurrentlyTaken(uint256 x, uint256 y);
 error PositionNotMintable(uint256 x, uint256 y);
 
 contract TBD is ERC721, Ownable2Step {
-
     enum Direction {
         UP,
         DOWN
@@ -29,7 +28,7 @@ contract TBD is ERC721, Ownable2Step {
         uint256 x;
         uint256 y;
     }
-    
+
     struct Token {
         // have a field that is where the origin point is pointing to for that day
         Coordinate initial;
@@ -44,10 +43,10 @@ contract TBD is ERC721, Ownable2Step {
     uint256 public currentTokenId = 1;
     mapping(bytes32 => bool) public mintableCoordinates;
     mapping(uint256 => Token) public tokenIdToTokenInfo;
-    
+
     uint256 public constant MAX_SUPPLY = 200;
 
-    constructor() ERC721("TBD", "TBD") Ownable(msg.sender) { } 
+    constructor() ERC721("TBD", "TBD") Ownable(msg.sender) {}
 
     // over an hour
     // 1eth to 0.2 resting price??
@@ -70,16 +69,16 @@ contract TBD is ERC721, Ownable2Step {
         // check if position is taken*
         // check if y is less than 10 -> set direction to DOWN, else UP*
 
-        if(currentTokenId + 1 > MAX_SUPPLY) {
+        if (currentTokenId + 1 > MAX_SUPPLY) {
             revert MaxSupply();
         }
 
-        if(board[x][y] > 0) {
-            revert PositionCurrentlyTaken(x, y); 
+        if (board[x][y] > 0) {
+            revert PositionCurrentlyTaken(x, y);
         }
 
         bytes32 hash = getCoordinateHash(Coordinate({x: x, y: y}));
-        if(!mintableCoordinates[hash]) {
+        if (!mintableCoordinates[hash]) {
             revert PositionNotMintable(x, y);
         }
 
@@ -108,21 +107,19 @@ contract TBD is ERC721, Ownable2Step {
     }
 
     function setInitialAvailableCoordinates(Coordinate[] memory coordinates) external {
-        for(uint256 i=0;i < coordinates.length;i++) {
+        for (uint256 i = 0; i < coordinates.length; i++) {
             bytes32 hash = getCoordinateHash(coordinates[i]);
             mintableCoordinates[hash] = true;
         }
     }
 
-    function getCoordinateHash(Coordinate memory coordinate) pure private returns(bytes32) {
+    function getCoordinateHash(Coordinate memory coordinate) private pure returns (bytes32) {
         return keccak256(abi.encode(coordinate));
     }
 
     function getToken(uint256 tokenId) public view returns (Token memory) {
         return tokenIdToTokenInfo[tokenId];
-    }  
+    }
 
-    function tokenURI(
-        uint256 id
-    ) public view virtual override returns (string memory) {}
+    function tokenURI(uint256 id) public view virtual override returns (string memory) {}
 }

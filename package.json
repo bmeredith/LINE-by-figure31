@@ -1,0 +1,14 @@
+{
+  "name": "figure31",
+  "version": "1.0.0",
+  "repository": "https://github.com/bmeredith/Figure31.git",
+  "author": "bmeredith <1832575+bmeredith@users.noreply.github.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test -vvv"
+  },
+  "devDependencies": {
+    "solhint": "^4.0.0"
+  }
+}
