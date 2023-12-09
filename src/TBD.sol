@@ -121,5 +121,14 @@ contract TBD is ERC721, Ownable2Step {
         return tokenIdToTokenInfo[tokenId];
     }
 
+    // number of days passed = (token.timestamp / 1 days) % 3600
+    // cycle point = number of days passed % 10
+    // if (cycle point % 2 == 0) origin photo
+    // else if cycle point ==
+    //   1 == left
+    //   3 == upper left
+    //   5 == up
+    //   7 == upper right
+    //   9 == right
     function tokenURI(uint256 id) public view virtual override returns (string memory) {}
 }
