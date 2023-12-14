@@ -107,21 +107,7 @@ contract TBD is ERC721, Ownable2Step {
             revert InvalidDirection();
         }
 
-        Token memory token = tokenIdToTokenInfo[tokenId];
-        uint256 x = token.current.x;
-        uint256 y = token.current.y - 1;
-        if(y < 1) {
-            revert PositionOutOfBounds(x,y);
-        }
-
-        if(board[x][y] > 0) {
-            revert PositionCurrentlyTaken(x,y);
-        }
-
-        tokenIdToTokenInfo[currentTokenId].current = Coordinate({x: x, y: y});
-        tokenIdToTokenInfo[currentTokenId].hasReachedEnd = y == 1;
-        tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
-        tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
+        _move(tokenId, 0, -1);
     }
 
     function moveDown(uint256 tokenId) external {
@@ -133,21 +119,7 @@ contract TBD is ERC721, Ownable2Step {
             revert InvalidDirection();
         }
 
-        Token memory token = tokenIdToTokenInfo[tokenId];
-        uint256 x = token.current.x;
-        uint256 y = token.current.y + 1;
-        if(y >= 25) {
-            revert PositionOutOfBounds(x,y);
-        }
-
-        if(board[x][y] > 0) {
-            revert PositionCurrentlyTaken(x,y);
-        }
-
-        tokenIdToTokenInfo[currentTokenId].current = Coordinate({x: x, y: y});
-        tokenIdToTokenInfo[currentTokenId].hasReachedEnd = y == 24;
-        tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
-        tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
+        _move(tokenId, 0, 1);
     }
 
     function moveLeft(uint256 tokenId) external {
@@ -155,21 +127,7 @@ contract TBD is ERC721, Ownable2Step {
             revert NotTokenOwner();
         }
 
-        Token memory token = tokenIdToTokenInfo[tokenId];
-        uint256 x = token.current.x - 1;
-        uint256 y = token.current.y;
-
-        if(x < 1) {
-            revert PositionOutOfBounds(x,y);
-        }
-
-        if(board[x][y] > 0) {
-            revert PositionCurrentlyTaken(x,y);
-        }
-
-        tokenIdToTokenInfo[currentTokenId].current = Coordinate({x: x, y: y});
-        tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
-        tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
+        _move(tokenId, -1, 0);
     }
 
     function moveRight(uint256 tokenId) external {
@@ -177,25 +135,10 @@ contract TBD is ERC721, Ownable2Step {
             revert NotTokenOwner();
         }
 
-        Token memory token = tokenIdToTokenInfo[tokenId];
-        uint256 x = token.current.x + 1;
-        uint256 y = token.current.y;
-
-        if(x >= 24) {
-            revert PositionOutOfBounds(x,y);
-        }
-
-        if(board[x][y] > 0) {
-            revert PositionCurrentlyTaken(x,y);
-        }
-
-        tokenIdToTokenInfo[currentTokenId].current = Coordinate({x: x, y: y});
-        tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
-        tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
+        _move(tokenId, 1, 0);
     }
 
     function _move(uint256 tokenId, int256 xDelta, int256 yDelta) private {
-
         Token memory token = tokenIdToTokenInfo[tokenId];
         uint256 x = 0;
         if (xDelta == -1) {
