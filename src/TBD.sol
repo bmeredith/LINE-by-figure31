@@ -13,10 +13,12 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 // be able to close out mint prior to 200 pieces being minted
 
+error InvalidDirection();
 error MaxSupply();
 error NotTokenOwner();
 error PositionCurrentlyTaken(uint256 x, uint256 y);
 error PositionNotMintable(uint256 x, uint256 y);
+error PositionOutOfBounds(uint256 x, uint256 y);
 
 contract TBD is ERC721, Ownable2Step {
     enum Direction {
@@ -96,11 +98,138 @@ contract TBD is ERC721, Ownable2Step {
         currentTokenId++;
     }
 
+    function moveUp(uint256 tokenId) external {
+        if(msg.sender != ownerOf(tokenId)) {
+            revert NotTokenOwner();
+        }
+
+        if(tokenIdToTokenInfo[tokenId].direction != Direction.UP) {
+            revert InvalidDirection();
+        }
+
+        Token memory token = tokenIdToTokenInfo[tokenId];
+        uint256 x = token.current.x;
+        uint256 y = token.current.y - 1;
+        if(y < 1) {
+            revert PositionOutOfBounds(x,y);
+        }
+
+        if(board[x][y] > 0) {
+            revert PositionCurrentlyTaken(x,y);
+        }
+
+        tokenIdToTokenInfo[currentTokenId].current = Coordinate({x: x, y: y});
+        tokenIdToTokenInfo[currentTokenId].hasReachedEnd = y == 1;
+        tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
+        tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
+    }
+
+    function moveDown(uint256 tokenId) external {
+        if(msg.sender != ownerOf(tokenId)) {
+            revert NotTokenOwner();
+        }
+
+        if(tokenIdToTokenInfo[tokenId].direction != Direction.DOWN) {
+            revert InvalidDirection();
+        }
+
+        Token memory token = tokenIdToTokenInfo[tokenId];
+        uint256 x = token.current.x;
+        uint256 y = token.current.y + 1;
+        if(y >= 25) {
+            revert PositionOutOfBounds(x,y);
+        }
+
+        if(board[x][y] > 0) {
+            revert PositionCurrentlyTaken(x,y);
+        }
+
+        tokenIdToTokenInfo[currentTokenId].current = Coordinate({x: x, y: y});
+        tokenIdToTokenInfo[currentTokenId].hasReachedEnd = y == 24;
+        tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
+        tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
+    }
+
+    function moveLeft(uint256 tokenId) external {
+        if(msg.sender != ownerOf(tokenId)) {
+            revert NotTokenOwner();
+        }
+
+        Token memory token = tokenIdToTokenInfo[tokenId];
+        uint256 x = token.current.x - 1;
+        uint256 y = token.current.y;
+
+        if(x < 1) {
+            revert PositionOutOfBounds(x,y);
+        }
+
+        if(board[x][y] > 0) {
+            revert PositionCurrentlyTaken(x,y);
+        }
+
+        tokenIdToTokenInfo[currentTokenId].current = Coordinate({x: x, y: y});
+        tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
+        tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
+    }
+
+    function moveRight(uint256 tokenId) external {
+        if(msg.sender != ownerOf(tokenId)) {
+            revert NotTokenOwner();
+        }
+
+        Token memory token = tokenIdToTokenInfo[tokenId];
+        uint256 x = token.current.x + 1;
+        uint256 y = token.current.y;
+
+        if(x >= 24) {
+            revert PositionOutOfBounds(x,y);
+        }
+
+        if(board[x][y] > 0) {
+            revert PositionCurrentlyTaken(x,y);
+        }
+
+        tokenIdToTokenInfo[currentTokenId].current = Coordinate({x: x, y: y});
+        tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
+        tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
+    }
+
+    function _move(uint256 tokenId, int256 xDelta, int256 yDelta) private {
+
+        Token memory token = tokenIdToTokenInfo[tokenId];
+        uint256 x = 0;
+        if (xDelta == -1) {
+            x = token.current.x - 1;
+        } else if (xDelta == 1) {
+            x = token.current.x + 1;
+        }
+
+        uint256 y = 0;
+        if (yDelta == -1) {
+            y = token.current.y + 1;
+        } else if(yDelta == 1) {
+            y = token.current.y - 1;
+        }
+
+        if(x < 1 || x >= 25 || y < 1 || y >= 25) {
+            revert PositionOutOfBounds(x,y);
+        }
+
+        if(board[x][y] > 0) {
+            revert PositionCurrentlyTaken(x,y);
+        }
+
+        tokenIdToTokenInfo[currentTokenId].current = Coordinate({x: x, y: y});
+        tokenIdToTokenInfo[currentTokenId].hasReachedEnd = (y == 1 || y == 24);
+        tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
+        tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
+    }
+
     // move up, left, right, down functions instead?
     function move(uint256 tokenId, int256 x, int256 y) external {
         // check if owner of tokenid
-        // check if x > 1
-        // check if y > 1
+        // check if x > 1 or x < 25
+        // check if y > 1 or y < 25
         // check if x is out of bound
         // check if y is out of bound
         // check if result x,y is already taken
