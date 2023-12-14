@@ -162,6 +162,9 @@ contract TBD is ERC721, Ownable2Step {
             revert PositionCurrentlyTaken(x,y);
         }
 
+        board[token.current.x][token.current.y] = 0;
+        board[x][y] = tokenId;
+
         tokenIdToTokenInfo[currentTokenId].current = Coordinate({x: x, y: y});
         tokenIdToTokenInfo[currentTokenId].hasReachedEnd = (y == 1 || y == 24);
         tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
