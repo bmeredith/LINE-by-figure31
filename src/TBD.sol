@@ -168,16 +168,6 @@ contract TBD is ERC721, Ownable2Step {
         tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
     }
 
-    // move up, left, right, down functions instead?
-    function move(uint256 tokenId, int256 x, int256 y) external {
-        // check if owner of tokenid
-        // check if x > 1 or x < 25
-        // check if y > 1 or y < 25
-        // check if x is out of bound
-        // check if y is out of bound
-        // check if result x,y is already taken
-    }
-
     function setInitialAvailableCoordinates(Coordinate[] memory coordinates) external {
         for (uint256 i = 0; i < coordinates.length; i++) {
             bytes32 hash = getCoordinateHash(coordinates[i]);
