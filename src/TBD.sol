@@ -41,7 +41,10 @@ contract TBD is ERC721, Ownable2Step {
         uint256 numMovements;
     }
 
-    uint256[25][25] public board;
+    uint256 public constant NUM_ROWS = 25;
+    uint256 public constant NUM_COLUMNS = 25;
+
+    uint256[NUM_COLUMNS][NUM_ROWS] public board;
     uint256 public currentTokenId = 1;
     mapping(bytes32 => bool) public mintableCoordinates;
     mapping(uint256 => Token) public tokenIdToTokenInfo;
@@ -154,7 +157,7 @@ contract TBD is ERC721, Ownable2Step {
             y = token.current.y - 1;
         }
 
-        if(x < 1 || x >= 25 || y < 1 || y >= 25) {
+        if(x < 1 || x >= NUM_COLUMNS || y < 1 || y >= NUM_ROWS) {
             revert PositionOutOfBounds(x,y);
         }
 
@@ -166,12 +169,12 @@ contract TBD is ERC721, Ownable2Step {
         board[x][y] = tokenId;
 
         tokenIdToTokenInfo[currentTokenId].current = Coordinate({x: x, y: y});
-        tokenIdToTokenInfo[currentTokenId].hasReachedEnd = (y == 1 || y == 24);
+        tokenIdToTokenInfo[currentTokenId].hasReachedEnd = (y == 1 || y == (NUM_ROWS - 1));
         tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
         tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
     }
 
-    function setInitialAvailableCoordinates(Coordinate[] memory coordinates) external {
+    function setInitialAvailableCoordinates(Coordinate[] memory coordinates) external onlyOwner {
         for (uint256 i = 0; i < coordinates.length; i++) {
             bytes32 hash = getCoordinateHash(coordinates[i]);
             mintableCoordinates[hash] = true;
@@ -186,6 +189,7 @@ contract TBD is ERC721, Ownable2Step {
         return tokenIdToTokenInfo[tokenId];
     }
 
+    // image filename = (y * NUM_ROWS) + x
     // number of days passed = (token.timestamp / 1 days) % 3600
     // cycle point = number of days passed % 10
     // if (cycle point % 2 == 0) origin photo
