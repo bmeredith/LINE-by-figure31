@@ -65,7 +65,7 @@ contract TBD is ERC721, Ownable2Step {
             revert PositionCurrentlyTaken(x, y);
         }
 
-        bytes32 hash = getCoordinateHash(ITokenDescriptor.Coordinate({x: x, y: y}));
+        bytes32 hash = _getCoordinateHash(ITokenDescriptor.Coordinate({x: x, y: y}));
         if (!mintableCoordinates[hash]) {
             revert PositionNotMintable(x, y);
         }
@@ -159,12 +159,16 @@ contract TBD is ERC721, Ownable2Step {
 
     function setInitialAvailableCoordinates(ITokenDescriptor.Coordinate[] memory coordinates) external onlyOwner {
         for (uint256 i = 0; i < coordinates.length; i++) {
-            bytes32 hash = getCoordinateHash(coordinates[i]);
+            bytes32 hash = _getCoordinateHash(coordinates[i]);
             mintableCoordinates[hash] = true;
         }
     }
 
-    function getCoordinateHash(ITokenDescriptor.Coordinate memory coordinate) private pure returns (bytes32) {
+    function closeMint() external onlyOwner {
+
+    }
+
+    function _getCoordinateHash(ITokenDescriptor.Coordinate memory coordinate) private pure returns (bytes32) {
         return keccak256(abi.encode(coordinate));
     }
 
