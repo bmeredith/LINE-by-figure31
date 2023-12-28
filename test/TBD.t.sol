@@ -52,8 +52,8 @@ contract TBDTest is Test {
         tbd.mintAtPosition(0,12);
         tbd.mintAtPosition(0,13);
 
-        assertTrue(tbd.getToken(1).direction == TBD.Direction.DOWN);
-        assertTrue(tbd.getToken(2).direction == TBD.Direction.UP);
+        assertTrue(tbd.getToken(1).direction == ITokenDescriptor.Direction.DOWN);
+        assertTrue(tbd.getToken(2).direction == ITokenDescriptor.Direction.UP);
     }
 
     function mockCurrentTokenId(uint256 tokenId) private {
@@ -63,7 +63,7 @@ contract TBDTest is Test {
     }
 
     function mockMintableCoordinate(uint256 x, uint256 y, bool isMintable) private {
-        bytes32 hash = keccak256(abi.encode(TBD.Coordinate({x: x, y: y})));
+        bytes32 hash = keccak256(abi.encode(ITokenDescriptor.Coordinate({x: x, y: y})));
         bytes32 mintableCoordinateSlot = getIsMintableCoordinateSlot(hash);
         bytes32 mockedIsMintableSlotValue = bytes32(abi.encode(isMintable));
         vm.store(address(tbd), mintableCoordinateSlot, mockedIsMintableSlotValue);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import {ITokenDescriptor} from "./ITokenDescriptor.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
@@ -21,25 +22,6 @@ error PositionNotMintable(uint256 x, uint256 y);
 error PositionOutOfBounds(uint256 x, uint256 y);
 
 contract TBD is ERC721, Ownable2Step {
-    enum Direction {
-        UP,
-        DOWN
-    }
-
-    struct Coordinate {
-        uint256 x;
-        uint256 y;
-    }
-
-    struct Token {
-        // have a field that is where the origin point is pointing to for that day
-        Coordinate initial;
-        Coordinate current;
-        uint256 timestamp;
-        bool hasReachedEnd;
-        Direction direction;
-        uint256 numMovements;
-    }
 
     uint256 public constant NUM_ROWS = 25;
     uint256 public constant NUM_COLUMNS = 25;
@@ -47,7 +29,7 @@ contract TBD is ERC721, Ownable2Step {
     uint256[NUM_COLUMNS][NUM_ROWS] public board;
     uint256 public currentTokenId = 1;
     mapping(bytes32 => bool) public mintableCoordinates;
-    mapping(uint256 => Token) public tokenIdToTokenInfo;
+    mapping(uint256 => ITokenDescriptor.Token) public tokenIdToTokenInfo;
 
     uint256 public constant MAX_SUPPLY = 200;
 
@@ -82,18 +64,18 @@ contract TBD is ERC721, Ownable2Step {
             revert PositionCurrentlyTaken(x, y);
         }
 
-        bytes32 hash = getCoordinateHash(Coordinate({x: x, y: y}));
+        bytes32 hash = getCoordinateHash(ITokenDescriptor.Coordinate({x: x, y: y}));
         if (!mintableCoordinates[hash]) {
             revert PositionNotMintable(x, y);
         }
 
         board[x][y] = currentTokenId;
-        tokenIdToTokenInfo[currentTokenId] = Token({
-            initial: Coordinate({x: x, y: y}),
-            current: Coordinate({x: x, y: y}),
+        tokenIdToTokenInfo[currentTokenId] = ITokenDescriptor.Token({
+            initial: ITokenDescriptor.Coordinate({x: x, y: y}),
+            current: ITokenDescriptor.Coordinate({x: x, y: y}),
             timestamp: block.timestamp,
             hasReachedEnd: false,
-            direction: y < 13 ? Direction.DOWN : Direction.UP,
+            direction: y < 13 ? ITokenDescriptor.Direction.DOWN : ITokenDescriptor.Direction.UP,
             numMovements: 0
         });
 
@@ -106,7 +88,7 @@ contract TBD is ERC721, Ownable2Step {
             revert NotTokenOwner();
         }
 
-        if(tokenIdToTokenInfo[tokenId].direction != Direction.UP) {
+        if(tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.UP) {
             revert InvalidDirection();
         }
 
@@ -118,7 +100,7 @@ contract TBD is ERC721, Ownable2Step {
             revert NotTokenOwner();
         }
 
-        if(tokenIdToTokenInfo[tokenId].direction != Direction.DOWN) {
+        if(tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.DOWN) {
             revert InvalidDirection();
         }
 
@@ -142,7 +124,7 @@ contract TBD is ERC721, Ownable2Step {
     }
 
     function _move(uint256 tokenId, int256 xDelta, int256 yDelta) private {
-        Token memory token = tokenIdToTokenInfo[tokenId];
+        ITokenDescriptor.Token memory token = tokenIdToTokenInfo[tokenId];
         uint256 x = 0;
         if (xDelta == -1) {
             x = token.current.x - 1;
@@ -168,24 +150,24 @@ contract TBD is ERC721, Ownable2Step {
         board[token.current.x][token.current.y] = 0;
         board[x][y] = tokenId;
 
-        tokenIdToTokenInfo[currentTokenId].current = Coordinate({x: x, y: y});
+        tokenIdToTokenInfo[currentTokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
         tokenIdToTokenInfo[currentTokenId].hasReachedEnd = (y == 1 || y == (NUM_ROWS - 1));
         tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
         tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
     }
 
-    function setInitialAvailableCoordinates(Coordinate[] memory coordinates) external onlyOwner {
+    function setInitialAvailableCoordinates(ITokenDescriptor.Coordinate[] memory coordinates) external onlyOwner {
         for (uint256 i = 0; i < coordinates.length; i++) {
             bytes32 hash = getCoordinateHash(coordinates[i]);
             mintableCoordinates[hash] = true;
         }
     }
 
-    function getCoordinateHash(Coordinate memory coordinate) private pure returns (bytes32) {
+    function getCoordinateHash(ITokenDescriptor.Coordinate memory coordinate) private pure returns (bytes32) {
         return keccak256(abi.encode(coordinate));
     }
 
-    function getToken(uint256 tokenId) public view returns (Token memory) {
+    function getToken(uint256 tokenId) public view returns (ITokenDescriptor.Token memory) {
         return tokenIdToTokenInfo[tokenId];
     }
 
@@ -199,5 +181,7 @@ contract TBD is ERC721, Ownable2Step {
     //   5 == up
     //   7 == upper right
     //   9 == right
-    function tokenURI(uint256 id) public view virtual override returns (string memory) {}
+    function tokenURI(uint256 id) public view virtual override returns (string memory) {
+
+    }
 }
