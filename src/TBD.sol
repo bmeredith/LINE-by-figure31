@@ -16,6 +16,7 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 error InvalidDirection();
 error MaxSupply();
+error NotMinted();
 error NotTokenOwner();
 error PositionCurrentlyTaken(uint256 x, uint256 y);
 error PositionNotMintable(uint256 x, uint256 y);
@@ -182,6 +183,7 @@ contract TBD is ERC721, Ownable2Step {
     //   7 == upper right
     //   9 == right
     function tokenURI(uint256 id) public view virtual override returns (string memory) {
-
+        if (ownerOf(id) == address(0))
+            revert NotMinted();
     }
 }
