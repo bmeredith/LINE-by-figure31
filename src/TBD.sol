@@ -8,14 +8,6 @@ import {ERC721} from "solmate/tokens/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
-// implement DA from Web contract
-// add max qty
-// start time
-// end time?
-// is there a AL?
-
-// be able to close out mint prior to 200 pieces being minted
-
 error InvalidDirection();
 error MintingClosed();
 error MovementLocked();
@@ -195,12 +187,18 @@ contract TBD is ERC721, Ownable2Step, Constants {
     function getToken(uint256 tokenId) public view returns (ITokenDescriptor.Token memory) {
         return tokenIdToTokenInfo[tokenId];
     }
-    
+
     function tokenURI(uint256 id) public view virtual override returns (string memory) {
         if (ownerOf(id) == address(0))
             revert NotMinted();
 
         ITokenDescriptor.Token memory token = tokenIdToTokenInfo[id];
         return _metadataGenerator.generateMetadata(id, token);
+    }
+
+    function withdraw() external onlyOwner {
+        uint256 balance = address(this).balance;
+        (bool success, ) = msg.sender.call{value: balance}("");
+        require(success, "Transfer failed.");
     }
 }
