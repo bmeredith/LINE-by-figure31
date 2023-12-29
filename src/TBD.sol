@@ -195,17 +195,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
     function getToken(uint256 tokenId) public view returns (ITokenDescriptor.Token memory) {
         return tokenIdToTokenInfo[tokenId];
     }
-
-    // image filename = (y * NUM_ROWS) + x
-    // number of days passed = (token.timestamp / 1 days) % 3600
-    // cycle point = number of days passed % 10
-    // if (cycle point % 2 == 0) origin photo
-    // else if cycle point ==
-    //   1 == left
-    //   3 == upper left
-    //   5 == up
-    //   7 == upper right
-    //   9 == right
+    
     function tokenURI(uint256 id) public view virtual override returns (string memory) {
         if (ownerOf(id) == address(0))
             revert NotMinted();

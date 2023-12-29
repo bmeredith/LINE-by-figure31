@@ -13,7 +13,6 @@ interface ITokenDescriptor {
     }
 
     struct Token {
-        // have a field that is where the origin point is pointing to for that day
         Coordinate initial;
         Coordinate current;
         uint256 timestamp;

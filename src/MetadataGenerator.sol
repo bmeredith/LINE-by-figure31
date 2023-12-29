@@ -90,12 +90,7 @@ contract MetadataGenerator is Constants {
 
         return _calculateImageIndex(x, y);
     }
-
-    // 1 == left
-    // 3 == upper left
-    // 5 == up
-    // 7 == upper right
-    // 9 == right
+    
     function _calculateImageIndex(uint256 x, uint256 y)
         private
         pure
