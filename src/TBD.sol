@@ -33,27 +33,12 @@ contract TBD is ERC721, Ownable2Step, Constants {
         _metadataGenerator = new MetadataGenerator();
     }
 
-    // over an hour
-    // 1eth to 0.2 resting price??
     function mintAtRandom() external payable {
-        // check supply
-        // check if price matches current price from auction
-        // keep track of available positions in an array?
-        // on last mint, enable moving to be allowed
-
         _mint(msg.sender, currentTokenId);
         currentTokenId++;
     }
 
-    // make multiple?
     function mintAtPosition(uint256 x, uint256 y) external payable {
-        // check supply*
-        // check if mint is closed*
-        // check if price matches current price from auction
-        // check if position is a mintable position*
-        // check if position is taken*
-        // check if y is less than 10 -> set direction to DOWN, else UP*
-
         uint256 tokenId = currentTokenId;    
         if (_isMintingClosed) {
             revert MintingClosed();
