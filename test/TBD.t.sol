@@ -14,9 +14,9 @@ contract TBDTest is Test {
     }
 
     function test_mint_revertWhenMaxSupplyReached() public {
-        mockCurrentTokenId(tbd.MAX_SUPPLY());
+        mockCurrentTokenId(tbd.MAX_SUPPLY() + 1);
 
-        vm.expectRevert(MaxSupply.selector);
+        vm.expectRevert(MaxSupplyReached.selector);
         tbd.mintAtPosition(0,0);
     }
 

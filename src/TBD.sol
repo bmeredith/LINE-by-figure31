@@ -15,7 +15,8 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 // be able to close out mint prior to 200 pieces being minted
 
 error InvalidDirection();
-error MaxSupply();
+error MaxSupplyReached();
+error MintingClosed();
 error NotMinted();
 error NotTokenOwner();
 error PositionCurrentlyTaken(uint256 x, uint256 y);
@@ -24,15 +25,16 @@ error PositionOutOfBounds(uint256 x, uint256 y);
 
 contract TBD is ERC721, Ownable2Step {
 
+    uint256 public constant MAX_SUPPLY = 200;
     uint256 public constant NUM_ROWS = 25;
     uint256 public constant NUM_COLUMNS = 25;
+    uint256 public currentTokenId = 1;
+    bool private _canMove;
+    bool private _isMintingClosed;
 
     uint256[NUM_COLUMNS][NUM_ROWS] public board;
-    uint256 public currentTokenId = 1;
     mapping(bytes32 => bool) public mintableCoordinates;
     mapping(uint256 => ITokenDescriptor.Token) public tokenIdToTokenInfo;
-
-    uint256 public constant MAX_SUPPLY = 200;
 
     constructor() ERC721("TBD", "TBD") Ownable(msg.sender) {}
 
@@ -51,14 +53,19 @@ contract TBD is ERC721, Ownable2Step {
     // make multiple?
     function mintAtPosition(uint256 x, uint256 y) external payable {
         // check supply*
-        // check if mint is locked
+        // check if mint is closed*
         // check if price matches current price from auction
         // check if position is a mintable position*
         // check if position is taken*
         // check if y is less than 10 -> set direction to DOWN, else UP*
 
-        if (currentTokenId + 1 > MAX_SUPPLY) {
-            revert MaxSupply();
+        uint256 tokenId = currentTokenId;    
+        if (_isMintingClosed) {
+            revert MintingClosed();
+        }
+
+        if (tokenId > MAX_SUPPLY) {
+            revert MaxSupplyReached();
         }
 
         if (board[x][y] > 0) {
@@ -70,8 +77,8 @@ contract TBD is ERC721, Ownable2Step {
             revert PositionNotMintable(x, y);
         }
 
-        board[x][y] = currentTokenId;
-        tokenIdToTokenInfo[currentTokenId] = ITokenDescriptor.Token({
+        board[x][y] = tokenId;
+        tokenIdToTokenInfo[tokenId] = ITokenDescriptor.Token({
             initial: ITokenDescriptor.Coordinate({x: x, y: y}),
             current: ITokenDescriptor.Coordinate({x: x, y: y}),
             timestamp: block.timestamp,
@@ -80,8 +87,13 @@ contract TBD is ERC721, Ownable2Step {
             numMovements: 0
         });
 
-        _mint(msg.sender, currentTokenId);
-        currentTokenId++;
+        if(tokenId == MAX_SUPPLY) {
+            _closeMint();
+        } else {
+            currentTokenId++;
+        }
+
+        _mint(msg.sender, tokenId);
     }
 
     function moveUp(uint256 tokenId) external {
@@ -165,7 +177,12 @@ contract TBD is ERC721, Ownable2Step {
     }
 
     function closeMint() external onlyOwner {
+        _closeMint();
+    }
 
+    function _closeMint() private {
+        _isMintingClosed = true;
+        _canMove = true;
     }
 
     function _getCoordinateHash(ITokenDescriptor.Coordinate memory coordinate) private pure returns (bytes32) {
