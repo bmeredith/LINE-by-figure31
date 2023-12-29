@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import {Constants} from "./Constants.sol";
 import {ITokenDescriptor} from "./ITokenDescriptor.sol";
 import {JsonWriter} from "solidity-json-writer/JsonWriter.sol";
 import {Base64} from '@openzeppelin/contracts/utils/Base64.sol';
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-contract MetadataGenerator {
+contract MetadataGenerator is Constants {
     using JsonWriter for JsonWriter.Json;
 
     function generateMetadata(uint256 tokenId, ITokenDescriptor.Token calldata token) 
@@ -27,15 +28,15 @@ contract MetadataGenerator {
             'DESCRIPTION HERE'
         );
 
-
         writer = writer.writeStringProperty(
             'external_url',
             'https://temp'
         );
 
+        uint256 currentImageIndex = _determineCurrentCycleImage(token);
         writer = writer.writeStringProperty(
             'image',
-            string.concat('arweave://')
+            string.concat('arweave://', Strings.toString(currentImageIndex))
         );
 
         writer = _generateAttributes(writer);
@@ -50,12 +51,57 @@ contract MetadataGenerator {
         );
     }
 
-    function _determineImage(ITokenDescriptor.Coordinate calldata coordinate) 
+    function _determineCurrentCycleImage(ITokenDescriptor.Token calldata token) 
         private
         pure
         returns (uint256) 
     {
+        uint256 numDaysPassed = (token.timestamp / 1 days) % 3600;
+        uint256 cyclePoint = numDaysPassed % 10;
 
+        // at the origin
+        if (cyclePoint % 2 == 0) {
+            return _calculateImageIndex(token.current.x, token.current.y);            
+        }
+
+        // 1 = left
+        // 3 = upper left
+        // 5 = up
+        // 7 = upper right
+        // 9 = right
+        uint256 x;
+        uint256 y;
+        if (cyclePoint == 1) {
+            x = token.current.x - 1;
+            y = token.current.y;
+        } else if (cyclePoint == 3) {
+            x = token.current.x - 1;
+            y = token.current.y + 1;
+        } else if (cyclePoint == 5) {
+            x = token.current.x;
+            y = token.current.y + 1;
+        } else if (cyclePoint == 7) {
+            x = token.current.x + 1;
+            y = token.current.y + 1;
+        } else if (cyclePoint == 9) {
+            x = token.current.x + 1;
+            y = token.current.y;
+        }
+
+        return _calculateImageIndex(x, y);
+    }
+
+    // 1 == left
+    // 3 == upper left
+    // 5 == up
+    // 7 == upper right
+    // 9 == right
+    function _calculateImageIndex(uint256 x, uint256 y)
+        private
+        pure
+        returns (uint256) 
+    {
+        return (y * NUM_ROWS) + x;
     }
 
     function _generateAttributes(JsonWriter.Json memory _writer) 

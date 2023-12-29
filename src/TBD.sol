@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import {Constants} from "./Constants.sol";
+import {MetadataGenerator} from "./MetadataGenerator.sol";
 import {ITokenDescriptor} from "./ITokenDescriptor.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -24,20 +26,21 @@ error PositionCurrentlyTaken(uint256 x, uint256 y);
 error PositionNotMintable(uint256 x, uint256 y);
 error PositionOutOfBounds(uint256 x, uint256 y);
 
-contract TBD is ERC721, Ownable2Step {
+contract TBD is ERC721, Ownable2Step, Constants {
 
-    uint256 public constant MAX_SUPPLY = 200;
-    uint256 public constant NUM_ROWS = 25;
-    uint256 public constant NUM_COLUMNS = 25;
     uint256 public currentTokenId = 1;
     bool private _canMove;
     bool private _isMintingClosed;
+
+    MetadataGenerator private _metadataGenerator;
 
     uint256[NUM_COLUMNS][NUM_ROWS] public board;
     mapping(bytes32 => bool) public mintableCoordinates;
     mapping(uint256 => ITokenDescriptor.Token) public tokenIdToTokenInfo;
 
-    constructor() ERC721("TBD", "TBD") Ownable(msg.sender) {}
+    constructor() ERC721("TBD", "TBD") Ownable(msg.sender) {
+        _metadataGenerator = new MetadataGenerator();
+    }
 
     // over an hour
     // 1eth to 0.2 resting price??
@@ -88,10 +91,10 @@ contract TBD is ERC721, Ownable2Step {
             numMovements: 0
         });
 
-        if(tokenId == MAX_SUPPLY) {
-            _closeMint();
-        } else {
+        if(tokenId != MAX_SUPPLY) {
             currentTokenId++;
+        } else {
+            _closeMint();
         }
 
         _mint(msg.sender, tokenId);
@@ -211,5 +214,8 @@ contract TBD is ERC721, Ownable2Step {
     function tokenURI(uint256 id) public view virtual override returns (string memory) {
         if (ownerOf(id) == address(0))
             revert NotMinted();
+
+        ITokenDescriptor.Token memory token = tokenIdToTokenInfo[id];
+        return _metadataGenerator.generateMetadata(id, token);
     }
 }
