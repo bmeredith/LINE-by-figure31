@@ -24,6 +24,15 @@ contract TBDTest is Test {
         tbd.mintAtPosition(0,1);
     }
 
+    function test_mint_revertWhenMintIsClosed() public {
+        mockMintableCoordinate(0, 0, true);
+
+        tbd.closeMint();
+
+        vm.expectRevert(MintingClosed.selector);
+        tbd.mintAtPosition(0,0);
+    }
+
     function test_mint_revertWhenPositionIsTaken() public {
         bytes32 firstBoardSlot = getBoardPositionSlot(0, 0);
         bytes32 mockedFirstBoardSlotValue = bytes32(abi.encode(1));
