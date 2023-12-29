@@ -17,6 +17,7 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 error InvalidDirection();
 error MaxSupplyReached();
 error MintingClosed();
+error MovementLocked();
 error NotMinted();
 error NotTokenOwner();
 error PositionCurrentlyTaken(uint256 x, uint256 y);
@@ -137,6 +138,10 @@ contract TBD is ERC721, Ownable2Step {
     }
 
     function _move(uint256 tokenId, int256 xDelta, int256 yDelta) private {
+        if(!_canMove) {
+            revert MovementLocked();
+        }
+
         ITokenDescriptor.Token memory token = tokenIdToTokenInfo[tokenId];
         uint256 x = 0;
         if (xDelta == -1) {
