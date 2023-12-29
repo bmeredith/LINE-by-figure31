@@ -17,7 +17,6 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 // be able to close out mint prior to 200 pieces being minted
 
 error InvalidDirection();
-error MaxSupplyReached();
 error MintingClosed();
 error MovementLocked();
 error NotMinted();
@@ -66,10 +65,6 @@ contract TBD is ERC721, Ownable2Step, Constants {
         uint256 tokenId = currentTokenId;    
         if (_isMintingClosed) {
             revert MintingClosed();
-        }
-
-        if (tokenId > MAX_SUPPLY) {
-            revert MaxSupplyReached();
         }
 
         if (board[x][y] > 0) {
@@ -172,7 +167,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
         board[x][y] = tokenId;
 
         tokenIdToTokenInfo[currentTokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
-        tokenIdToTokenInfo[currentTokenId].hasReachedEnd = (y == 1 || y == (NUM_ROWS - 1));
+        tokenIdToTokenInfo[currentTokenId].hasReachedEnd = ((token.direction == ITokenDescriptor.Direction.UP && y == 1) || (token.direction == ITokenDescriptor.Direction.DOWN && y == (NUM_ROWS - 1)));
         tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
         tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
     }

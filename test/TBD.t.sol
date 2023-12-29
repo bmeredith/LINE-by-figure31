@@ -14,10 +14,14 @@ contract TBDTest is Test {
     }
 
     function test_mint_revertWhenMaxSupplyReached() public {
-        mockCurrentTokenId(tbd.MAX_SUPPLY() + 1);
+        mockCurrentTokenId(tbd.MAX_SUPPLY());
+        mockMintableCoordinate(0, 0, true);
+        mockMintableCoordinate(0, 1, true);
 
-        vm.expectRevert(MaxSupplyReached.selector);
-        tbd.mintAtPosition(0,0);
+        tbd.mintAtPosition(0, 0);
+
+        vm.expectRevert(MintingClosed.selector);
+        tbd.mintAtPosition(0,1);
     }
 
     function test_mint_revertWhenPositionIsTaken() public {
@@ -43,6 +47,14 @@ contract TBDTest is Test {
 
         uint256 value = getBoardPositionValue(0, 0);
         assertEq(1, value);
+    }
+
+    function test_mint() public {
+        mockMintableCoordinate(10, 10, true);
+
+        tbd.mintAtPosition(10,10);
+        string memory tokenUri = tbd.tokenURI(1);
+        console.log(tokenUri);
     }
 
     function test_mint_mintedTokenHasCorrectDirection() public {
