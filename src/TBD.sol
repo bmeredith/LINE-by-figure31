@@ -33,7 +33,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
         _metadataGenerator = new MetadataGenerator();
     }
 
-    function mintAtRandom() external payable {
+    function mintRandom() external payable {
         _mint(msg.sender, currentTokenId);
         currentTokenId++;
     }
