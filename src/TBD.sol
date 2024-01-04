@@ -54,7 +54,8 @@ contract TBD is ERC721, Ownable2Step, Constants {
     function mintAtPosition(uint256 x, uint256 y) external payable {
         uint256 currentPrice = getCurrentPrice();
         uint256 tokenId = currentTokenId;    
-        if (_isMintingClosed) {
+        
+        if (block.timestamp < config.startTime || _isMintingClosed) {
             revert MintingClosed();
         }
 
