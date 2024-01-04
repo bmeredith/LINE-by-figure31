@@ -8,6 +8,7 @@ import {ERC721} from "solmate/tokens/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
+error IncorrectPrice();
 error InvalidDirection();
 error MintingClosed();
 error MovementLocked();
@@ -19,11 +20,19 @@ error PositionOutOfBounds(uint256 x, uint256 y);
 
 contract TBD is ERC721, Ownable2Step, Constants {
 
+    struct SalesConfig {
+        uint64 startTime;
+        uint64 endTime;
+        uint256 startPriceInWei;
+        uint256 endPriceInWei;
+    }
+
     uint256 public currentTokenId = 1;
     bool private _canMove;
     bool private _isMintingClosed;
 
     MetadataGenerator private _metadataGenerator;
+    SalesConfig public config;
 
     uint256[NUM_COLUMNS][NUM_ROWS] public board;
     mapping(bytes32 => bool) public mintableCoordinates;
@@ -31,6 +40,10 @@ contract TBD is ERC721, Ownable2Step, Constants {
 
     constructor() ERC721("TBD", "TBD") Ownable(msg.sender) {
         _metadataGenerator = new MetadataGenerator();
+        config.startTime = uint64(1704369600);
+        config.endTime = uint64(1704369600 + 3600);
+        config.startPriceInWei = 1000000000000000000; // 1 eth
+        config.endPriceInWei = 200000000000000000; // .2 eth
     }
 
     function mintRandom() external payable {
@@ -39,6 +52,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
     }
 
     function mintAtPosition(uint256 x, uint256 y) external payable {
+        uint256 currentPrice = getCurrentPrice();
         uint256 tokenId = currentTokenId;    
         if (_isMintingClosed) {
             revert MintingClosed();
@@ -51,6 +65,10 @@ contract TBD is ERC721, Ownable2Step, Constants {
         bytes32 hash = _getCoordinateHash(ITokenDescriptor.Coordinate({x: x, y: y}));
         if (!mintableCoordinates[hash]) {
             revert PositionNotMintable(x, y);
+        }
+
+        if (msg.value != currentPrice) {
+            revert IncorrectPrice();
         }
 
         board[x][y] = tokenId;
@@ -70,6 +88,35 @@ contract TBD is ERC721, Ownable2Step, Constants {
         }
 
         _mint(msg.sender, tokenId);
+    }
+
+    function getCurrentPrice() public view returns (uint256) {
+        uint256 elapsedTime = ((block.timestamp - config.startTime) / 10 ) * 10;        
+        uint256 duration = config.endTime - config.startTime;
+        uint256 halflife = 950; // adjust this to adjust speed of decay
+
+        if (block.timestamp < config.startTime) {
+            return config.startPriceInWei;
+        }
+
+        if (elapsedTime >= duration) {
+            return config.endPriceInWei;
+        }
+
+        // h/t artblocks for exponential decaying price math
+        uint256 decayedPrice = config.startPriceInWei;
+        // Divide by two (via bit-shifting) for the number of entirely completed
+        // half-lives that have elapsed since auction start time.
+        decayedPrice >>= elapsedTime / halflife;
+        // Perform a linear interpolation between partial half-life points, to
+        // approximate the current place on a perfect exponential decay curve.
+        decayedPrice -= (decayedPrice * (elapsedTime % halflife)) / halflife / 2;
+        if (decayedPrice < config.endPriceInWei) {
+            // Price may not decay below stay `basePrice`.
+            return config.endPriceInWei;
+        }
+        
+        return (decayedPrice / 1000000000000000) * 1000000000000000;
     }
 
     function moveUp(uint256 tokenId) external {
@@ -174,11 +221,24 @@ contract TBD is ERC721, Ownable2Step, Constants {
     }
 
     function tokenURI(uint256 id) public view virtual override returns (string memory) {
-        if (ownerOf(id) == address(0))
+        if (ownerOf(id) == address(0)) {
             revert NotMinted();
+        }
 
         ITokenDescriptor.Token memory token = tokenIdToTokenInfo[id];
         return _metadataGenerator.generateMetadata(id, token);
+    }
+
+    function updateConfig(
+        uint64 startTime,
+        uint64 endTime,
+        uint256 startPriceInWei,
+        uint256 endPriceInWei
+    ) external onlyOwner {
+        config.startTime = startTime;
+        config.endTime = endTime;
+        config.startPriceInWei = startPriceInWei;
+        config.endPriceInWei = endPriceInWei;
     }
 
     function withdraw() external onlyOwner {
