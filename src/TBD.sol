@@ -2,6 +2,7 @@
 pragma solidity ^0.8.23;
 
 import {Constants} from "./Constants.sol";
+import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {MetadataGenerator} from "./MetadataGenerator.sol";
 import {ITokenDescriptor} from "./ITokenDescriptor.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
@@ -27,6 +28,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
         uint256 endPriceInWei;
     }
 
+    bytes32 public merkleRoot;
     uint256 public currentTokenId = 1;
     bool private _canMove;
     bool private _isMintingClosed;
@@ -35,6 +37,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
     SalesConfig public config;
 
     uint256[NUM_COLUMNS][NUM_ROWS] public board;
+    ITokenDescriptor.Coordinate[] private _availableCoordinates;
     mapping(bytes32 => bool) public mintableCoordinates;
     mapping(uint256 => ITokenDescriptor.Token) public tokenIdToTokenInfo;
 
@@ -51,10 +54,16 @@ contract TBD is ERC721, Ownable2Step, Constants {
         currentTokenId++;
     }
 
-    function mintAtPosition(uint256 x, uint256 y) external payable {
+    function mintAtPosition(uint256 x, uint256 y, bytes32[] calldata merkleProof) external payable {
         uint256 currentPrice = getCurrentPrice();
+        if (merkleProof.length > 0) {
+            bool hasDiscount = checkMerkleProof(merkleProof, msg.sender, merkleRoot);
+            if(hasDiscount) {
+                currentPrice = (currentPrice * 80) / 100; // 20% off
+            }
+        }
+
         uint256 tokenId = currentTokenId;    
-        
         if (block.timestamp < config.startTime || _isMintingClosed) {
             revert MintingClosed();
         }
@@ -130,6 +139,15 @@ contract TBD is ERC721, Ownable2Step, Constants {
         }
 
         _move(tokenId, 0, -1);
+    }
+    
+    function checkMerkleProof(
+        bytes32[] calldata merkleProof,
+        address _address,
+        bytes32 _root
+    ) public pure returns (bool) {
+        bytes32 leaf = keccak256(abi.encodePacked(_address));
+        return MerkleProof.verify(merkleProof, _root, leaf);
     }
 
     function moveNorthwest(uint256 tokenId) external {
@@ -250,6 +268,8 @@ contract TBD is ERC721, Ownable2Step, Constants {
             bytes32 hash = _getCoordinateHash(coordinates[i]);
             mintableCoordinates[hash] = true;
         }
+
+        _availableCoordinates = coordinates;
     }
 
     function closeMint() external onlyOwner {
@@ -288,6 +308,10 @@ contract TBD is ERC721, Ownable2Step, Constants {
         config.endTime = endTime;
         config.startPriceInWei = startPriceInWei;
         config.endPriceInWei = endPriceInWei;
+    }
+
+    function updateMerkleRoot(bytes32 _root) external onlyOwner {
+        merkleRoot = _root;
     }
 
     function withdraw() external onlyOwner {
