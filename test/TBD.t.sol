@@ -20,7 +20,7 @@ contract TBDTest is Test {
         mockMintableCoordinate(0, 0, true);
         mockMintableCoordinate(0, 1, true);
 
-        tbd.mintAtPosition{value: 1}(0, 0, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(0, 0, emptyMerkleProof);
 
         vm.expectRevert(MintingClosed.selector);
         tbd.mintAtPosition(0, 1, emptyMerkleProof);
@@ -41,20 +41,20 @@ contract TBDTest is Test {
         vm.store(address(tbd), firstBoardSlot, mockedFirstBoardSlotValue);
 
         vm.expectRevert(abi.encodeWithSelector(PositionCurrentlyTaken.selector, 0, 0));
-        tbd.mintAtPosition(0, 0, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(0, 0, emptyMerkleProof);
     }
 
     function test_mint_revertWhenPositionIsNotMintable() public {
         mockMintableCoordinate(0, 0, false);
 
         vm.expectRevert(abi.encodeWithSelector(PositionNotMintable.selector, 0, 0));
-        tbd.mintAtPosition(0, 0, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(0, 0, emptyMerkleProof);
     }
 
     function test_mint_mintedCoordinateIsTokenIdOnBoard() public {
         mockMintableCoordinate(0, 0, true);
 
-        tbd.mintAtPosition(0, 0, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(0, 0, emptyMerkleProof);
 
         uint256 value = getBoardPositionValue(0, 0);
         assertEq(1, value);
@@ -64,7 +64,7 @@ contract TBDTest is Test {
         console.log(tbd.getCurrentPrice());
         mockMintableCoordinate(10, 10, true);
 
-        tbd.mintAtPosition{value: 10}(10,10, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(10,10, emptyMerkleProof);
         string memory tokenUri = tbd.tokenURI(1);
     }
 
@@ -72,8 +72,8 @@ contract TBDTest is Test {
         mockMintableCoordinate(0, 12, true);
         mockMintableCoordinate(0, 13, true);
 
-        tbd.mintAtPosition(0, 12, emptyMerkleProof);
-        tbd.mintAtPosition(0, 13, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(0, 12, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(0, 13, emptyMerkleProof);
 
         assertTrue(tbd.getToken(1).direction == ITokenDescriptor.Direction.DOWN);
         assertTrue(tbd.getToken(2).direction == ITokenDescriptor.Direction.UP);
