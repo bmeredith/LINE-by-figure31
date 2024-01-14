@@ -17,6 +17,7 @@ interface ITokenDescriptor {
         Coordinate current;
         uint256 timestamp;
         bool hasReachedEnd;
+        bool isLocked;
         Direction direction;
         uint256 numMovements;
     }

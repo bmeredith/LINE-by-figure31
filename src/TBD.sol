@@ -58,7 +58,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
         uint256 currentPrice = getCurrentPrice();
         if (merkleProof.length > 0) {
             bool hasDiscount = checkMerkleProof(merkleProof, msg.sender, merkleRoot);
-            if(hasDiscount) {
+            if (hasDiscount) {
                 currentPrice = (currentPrice * 80) / 100; // 20% off
             }
         }
@@ -87,6 +87,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
             current: ITokenDescriptor.Coordinate({x: x, y: y}),
             timestamp: block.timestamp,
             hasReachedEnd: false,
+            isLocked: false,
             direction: y < 13 ? ITokenDescriptor.Direction.DOWN : ITokenDescriptor.Direction.UP,
             numMovements: 0
         });
@@ -263,13 +264,12 @@ contract TBD is ERC721, Ownable2Step, Constants {
         tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
     }
 
-    function setInitialAvailableCoordinates(ITokenDescriptor.Coordinate[] memory coordinates) external onlyOwner {
+    function setInitialAvailableCoordinates(ITokenDescriptor.Coordinate[] calldata coordinates) external onlyOwner {
         for (uint256 i = 0; i < coordinates.length; i++) {
             bytes32 hash = _getCoordinateHash(coordinates[i]);
             mintableCoordinates[hash] = true;
+            _availableCoordinates[i] = coordinates[i];
         }
-
-        _availableCoordinates = coordinates;
     }
 
     function closeMint() external onlyOwner {

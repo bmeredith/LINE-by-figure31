@@ -57,35 +57,55 @@ contract MetadataGenerator is Constants {
         returns (uint256) 
     {
         uint256 numDaysPassed = (token.timestamp / 1 days) % 3600;
-        uint256 cyclePoint = numDaysPassed % 10;
+        uint256 numCyclePoints;
 
-        // at the origin
+        if (!token.isLocked) {
+            numCyclePoints = 10; // 180° panoramic view
+        } else {
+            numCyclePoints = 16; // 360° panoramic view
+        }
+
+        uint256 cyclePoint = numDaysPassed % numCyclePoints;
+
+        // at the origin point for the day
         if (cyclePoint % 2 == 0) {
             return _calculateImageIndex(token.current.x, token.current.y);            
         }
 
-        // 1 = left
-        // 3 = upper left
-        // 5 = up
-        // 7 = upper right
-        // 9 = right
         uint256 x;
         uint256 y;
+        // 1 = west
+        // 3 = northwest
+        // 5 = north
+        // 7 = northeast
+        // 9 = east
+        // 11 = southeast
+        // 13 = south
+        // 15 = southwest
         if (cyclePoint == 1) {
             x = token.current.x - 1;
             y = token.current.y;
         } else if (cyclePoint == 3) {
             x = token.current.x - 1;
-            y = token.current.y + 1;
+            y = token.current.y - 1;
         } else if (cyclePoint == 5) {
             x = token.current.x;
-            y = token.current.y + 1;
+            y = token.current.y - 1;
         } else if (cyclePoint == 7) {
             x = token.current.x + 1;
-            y = token.current.y + 1;
+            y = token.current.y - 1;
         } else if (cyclePoint == 9) {
             x = token.current.x + 1;
             y = token.current.y;
+        } else if (cyclePoint == 11) {
+            x = token.current.x + 1;
+            y = token.current.y + 1;
+        } else if (cyclePoint == 13) {
+            x = token.current.x;
+            y = token.current.y + 1;
+        } else if (cyclePoint == 15) {
+            x = token.current.x - 1;
+            y = token.current.y + 1;
         }
 
         return _calculateImageIndex(x, y);
