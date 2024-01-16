@@ -20,10 +20,10 @@ contract TBDTest is Test {
         mockMintableCoordinate(0, 0, true);
         mockMintableCoordinate(0, 1, true);
 
-        tbd.mintAtPosition{value: 1000000000000000000}(0, 0, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
 
         vm.expectRevert(MintingClosed.selector);
-        tbd.mintAtPosition(0, 1, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 1), emptyMerkleProof);
     }
 
     function test_mint_revertWhenMintIsClosed() public {
@@ -32,7 +32,7 @@ contract TBDTest is Test {
         tbd.closeMint();
 
         vm.expectRevert(MintingClosed.selector);
-        tbd.mintAtPosition(0, 0, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
     }
 
     function test_mint_revertWhenPositionIsTaken() public {
@@ -41,20 +41,20 @@ contract TBDTest is Test {
         vm.store(address(tbd), firstBoardSlot, mockedFirstBoardSlotValue);
 
         vm.expectRevert(abi.encodeWithSelector(PositionCurrentlyTaken.selector, 0, 0));
-        tbd.mintAtPosition{value: 1000000000000000000}(0, 0, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
     }
 
     function test_mint_revertWhenPositionIsNotMintable() public {
         mockMintableCoordinate(0, 0, false);
 
         vm.expectRevert(abi.encodeWithSelector(PositionNotMintable.selector, 0, 0));
-        tbd.mintAtPosition{value: 1000000000000000000}(0, 0, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
     }
 
     function test_mint_mintedCoordinateIsTokenIdOnBoard() public {
         mockMintableCoordinate(0, 0, true);
 
-        tbd.mintAtPosition{value: 1000000000000000000}(0, 0, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
 
         uint256 value = getBoardPositionValue(0, 0);
         assertEq(1, value);
@@ -64,16 +64,17 @@ contract TBDTest is Test {
         console.log(tbd.getCurrentPrice());
         mockMintableCoordinate(10, 10, true);
 
-        tbd.mintAtPosition{value: 1000000000000000000}(10,10, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(10, 10), emptyMerkleProof);
         string memory tokenUri = tbd.tokenURI(1);
+        console.log(tokenUri);
     }
 
     function test_mint_mintedTokenHasCorrectDirection() public {
         mockMintableCoordinate(0, 12, true);
         mockMintableCoordinate(0, 13, true);
 
-        tbd.mintAtPosition{value: 1000000000000000000}(0, 12, emptyMerkleProof);
-        tbd.mintAtPosition{value: 1000000000000000000}(0, 13, emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 12), emptyMerkleProof);
+        tbd.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 13), emptyMerkleProof);
 
         assertTrue(tbd.getToken(1).direction == ITokenDescriptor.Direction.DOWN);
         assertTrue(tbd.getToken(2).direction == ITokenDescriptor.Direction.UP);
@@ -129,5 +130,11 @@ contract TBDTest is Test {
             .with_key(x)
             .with_key(y)
             .read_uint();
+    }
+
+    function generateSingleCoordinateArray(uint256 x, uint256 y) private pure returns (ITokenDescriptor.Coordinate[] memory) {
+        ITokenDescriptor.Coordinate[] memory coordinates = new ITokenDescriptor.Coordinate[](1);
+        coordinates[0] = ITokenDescriptor.Coordinate({x: x, y: y});
+        return coordinates;
     }
 }

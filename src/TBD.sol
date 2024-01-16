@@ -9,6 +9,7 @@ import {ERC721} from "solmate/tokens/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
+error ExceedsMaxMintPerTransaction();
 error IncorrectPrice();
 error InvalidDirection();
 error MintingClosed();
@@ -54,7 +55,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
         currentTokenId++;
     }
 
-    function mintAtPosition(uint256 x, uint256 y, bytes32[] calldata merkleProof) external payable {
+    function mintAtPosition(ITokenDescriptor.Coordinate[] memory coordinates, bytes32[] calldata merkleProof) external payable {
         uint256 currentPrice = getCurrentPrice();
         if (merkleProof.length > 0) {
             bool hasDiscount = checkMerkleProof(merkleProof, msg.sender, merkleRoot);
@@ -68,34 +69,43 @@ contract TBD is ERC721, Ownable2Step, Constants {
             revert MintingClosed();
         }
 
-        if (board[x][y] > 0) {
-            revert PositionCurrentlyTaken(x, y);
+        if (coordinates.length > 3) {
+            revert ExceedsMaxMintPerTransaction();
         }
 
-        bytes32 hash = _getCoordinateHash(ITokenDescriptor.Coordinate({x: x, y: y}));
-        if (!mintableCoordinates[hash]) {
-            revert PositionNotMintable(x, y);
-        }
+        for (uint256 i=0; i < coordinates.length; i++) {
+            uint256 x = coordinates[i].x;
+            uint256 y = coordinates[i].y;
 
-        if (msg.value != currentPrice) {
-            revert IncorrectPrice();
-        }
+            if (board[x][y] > 0) {
+                revert PositionCurrentlyTaken(x, y);
+            }
 
-        board[x][y] = tokenId;
-        tokenIdToTokenInfo[tokenId] = ITokenDescriptor.Token({
-            initial: ITokenDescriptor.Coordinate({x: x, y: y}),
-            current: ITokenDescriptor.Coordinate({x: x, y: y}),
-            timestamp: block.timestamp,
-            hasReachedEnd: false,
-            isLocked: false,
-            direction: y < 13 ? ITokenDescriptor.Direction.DOWN : ITokenDescriptor.Direction.UP,
-            numMovements: 0
-        });
+            bytes32 hash = _getCoordinateHash(ITokenDescriptor.Coordinate({x: x, y: y}));
+            if (!mintableCoordinates[hash]) {
+                revert PositionNotMintable(x, y);
+            }
 
-        if(tokenId != MAX_SUPPLY) {
-            currentTokenId++;
-        } else {
-            _closeMint();
+            if (msg.value < (currentPrice * coordinates.length)) {
+                revert IncorrectPrice();
+            }
+
+            board[x][y] = tokenId;
+            tokenIdToTokenInfo[tokenId] = ITokenDescriptor.Token({
+                initial: ITokenDescriptor.Coordinate({x: x, y: y}),
+                current: ITokenDescriptor.Coordinate({x: x, y: y}),
+                timestamp: block.timestamp,
+                hasReachedEnd: false,
+                isLocked: false,
+                direction: y < 13 ? ITokenDescriptor.Direction.DOWN : ITokenDescriptor.Direction.UP,
+                numMovements: 0
+            });
+
+            if (tokenId != MAX_SUPPLY) {
+                currentTokenId++;
+            } else {
+                _closeMint();
+            }
         }
 
         _mint(msg.sender, tokenId);
