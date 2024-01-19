@@ -107,7 +107,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
     }
 
     function mintRandom() external payable {
-
+        
     }
 
     function mintAtPosition(ITokenDescriptor.Coordinate[] memory coordinates, bytes32[] calldata merkleProof) external payable {
