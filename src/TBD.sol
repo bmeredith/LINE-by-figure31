@@ -71,7 +71,6 @@ contract TBD is ERC721, Ownable2Step, Constants {
         for(uint256 i=0; i < quantity; i++) {
             ITokenDescriptor.Coordinate memory coordinateToMint = availableCoordinates[0];
             _mintWithChecks(coordinateToMint);
-            _removeFromAvailability(0);
         }
     }
 
@@ -94,9 +93,6 @@ contract TBD is ERC721, Ownable2Step, Constants {
 
         for(uint256 i=0; i < coordinates.length; i++) {
             _mintWithChecks(coordinates[i]);
-            
-            uint256 index = coordinateHashToIndex[_getCoordinateHash(coordinates[i])];
-            _removeFromAvailability(index);
         }
     }
 
@@ -135,6 +131,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
             _closeMint();
         }
         
+        _removeFromAvailability(coordinateHashToIndex[hash]);
         _mint(msg.sender, tokenId);
     }
 
@@ -306,7 +303,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
             bytes32 hash = _getCoordinateHash(coordinates[i]);
             mintableCoordinates[hash] = true;
             coordinateHashToIndex[hash] = i;
-            availableCoordinates[i] = coordinates[i];
+            availableCoordinates.push(coordinates[i]);
         }
     }
 
