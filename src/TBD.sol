@@ -69,7 +69,7 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert IncorrectPrice();
         }
 
-        for(uint256 i=0; i < quantity; i++) {
+        for (uint256 i=0; i < quantity; i++) {
             ITokenDescriptor.Coordinate memory coordinateToMint = availableCoordinates[0];
             _mintWithChecks(coordinateToMint);
         }
@@ -92,7 +92,7 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert IncorrectPrice();
         }
 
-        for(uint256 i=0; i < coordinates.length; i++) {
+        for (uint256 i=0; i < coordinates.length; i++) {
             _mintWithChecks(coordinates[i]);
         }
     }
@@ -166,11 +166,11 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     function moveNorth(uint256 tokenId) external {
-        if(msg.sender != ownerOf(tokenId)) {
+        if (msg.sender != ownerOf(tokenId)) {
             revert NotTokenOwner();
         }
 
-        if(tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.UP) {
+        if (tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.UP) {
             revert InvalidDirection();
         }
 
@@ -187,11 +187,11 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     function moveNorthwest(uint256 tokenId) external {
-        if(msg.sender != ownerOf(tokenId)) {
+        if (msg.sender != ownerOf(tokenId)) {
             revert NotTokenOwner();
         }
 
-        if(tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.UP) {
+        if (tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.UP) {
             revert InvalidDirection();
         }
 
@@ -199,11 +199,11 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     function moveNortheast(uint256 tokenId) external {
-        if(msg.sender != ownerOf(tokenId)) {
+        if (msg.sender != ownerOf(tokenId)) {
             revert NotTokenOwner();
         }
 
-        if(tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.UP) {
+        if (tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.UP) {
             revert InvalidDirection();
         }
 
@@ -211,11 +211,11 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     function moveSouth(uint256 tokenId) external {
-        if(msg.sender != ownerOf(tokenId)) {
+        if (msg.sender != ownerOf(tokenId)) {
             revert NotTokenOwner();
         }
 
-        if(tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.DOWN) {
+        if (tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.DOWN) {
             revert InvalidDirection();
         }
 
@@ -223,11 +223,11 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     function moveSouthwest(uint256 tokenId) external {
-        if(msg.sender != ownerOf(tokenId)) {
+        if (msg.sender != ownerOf(tokenId)) {
             revert NotTokenOwner();
         }
 
-        if(tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.DOWN) {
+        if (tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.DOWN) {
             revert InvalidDirection();
         }
 
@@ -235,11 +235,11 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     function moveSoutheast(uint256 tokenId) external {
-        if(msg.sender != ownerOf(tokenId)) {
+        if (msg.sender != ownerOf(tokenId)) {
             revert NotTokenOwner();
         }
 
-        if(tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.DOWN) {
+        if (tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.DOWN) {
             revert InvalidDirection();
         }
 
@@ -247,7 +247,7 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     function moveWest(uint256 tokenId) external {
-        if(msg.sender != ownerOf(tokenId)) {
+        if (msg.sender != ownerOf(tokenId)) {
             revert NotTokenOwner();
         }
 
@@ -255,7 +255,7 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     function moveEast(uint256 tokenId) external {
-        if(msg.sender != ownerOf(tokenId)) {
+        if (msg.sender != ownerOf(tokenId)) {
             revert NotTokenOwner();
         }
 
@@ -263,7 +263,7 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     function _move(uint256 tokenId, int256 xDelta, int256 yDelta) private {
-        if(!_canMove) {
+        if (!_canMove) {
             revert MovementLocked();
         }
 
@@ -278,15 +278,15 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         uint256 y = 0;
         if (yDelta == -1) {
             y = token.current.y + 1;
-        } else if(yDelta == 1) {
+        } else if (yDelta == 1) {
             y = token.current.y - 1;
         }
 
-        if(x < 1 || x >= NUM_COLUMNS || y < 1 || y >= NUM_ROWS) {
+        if (x < 1 || x >= NUM_COLUMNS || y < 1 || y >= NUM_ROWS) {
             revert PositionOutOfBounds(x,y);
         }
 
-        if(board[x][y] > 0) {
+        if (board[x][y] > 0) {
             revert PositionCurrentlyTaken(x,y);
         }
 
