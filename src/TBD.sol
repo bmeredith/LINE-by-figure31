@@ -51,12 +51,32 @@ contract TBD is ERC721, Ownable2Step, Constants {
         config.endPriceInWei = 200000000000000000; // .2 eth
     }
 
-    function _mintWithChecks(ITokenDescriptor.Coordinate[] memory coordinates, bytes32[] calldata merkleProof) internal {
-        if (block.timestamp < config.startTime || _isMintingClosed) {
-            revert MintingClosed();
+    function mintRandom(uint256 quantity, bytes32[] calldata merkleProof) external payable {
+        if (quantity > MAX_MINT_PER_TX) {
+            revert ExceedsMaxMintPerTransaction();
+        }
+        
+        uint256 currentPrice = getCurrentPrice();
+        if (merkleProof.length > 0) {
+            bool hasDiscount = checkMerkleProof(merkleProof, msg.sender, merkleRoot);
+            if (hasDiscount) {
+                currentPrice = (currentPrice * 80) / 100; // 20% off
+            }
         }
 
-        if (coordinates.length > 3) {
+        if (msg.value < (currentPrice * quantity)) {
+            revert IncorrectPrice();
+        }
+
+        for(uint256 i=0; i < quantity; i++) {
+            ITokenDescriptor.Coordinate memory coordinateToMint = availableCoordinates[0];
+            _mintWithChecks(coordinateToMint);
+            _removeFromAvailability(0);
+        }
+    }
+
+    function mintAtPosition(ITokenDescriptor.Coordinate[] memory coordinates, bytes32[] calldata merkleProof) external payable {
+        if (coordinates.length > MAX_MINT_PER_TX) {
             revert ExceedsMaxMintPerTransaction();
         }
         
@@ -71,49 +91,51 @@ contract TBD is ERC721, Ownable2Step, Constants {
         if (msg.value < (currentPrice * coordinates.length)) {
             revert IncorrectPrice();
         }
-        
-        uint256 tokenId = currentTokenId;
-        for (uint256 i=0; i < coordinates.length; i++) {
-            uint256 x = coordinates[i].x;
-            uint256 y = coordinates[i].y;
 
-            if (board[x][y] > 0) {
-                revert PositionCurrentlyTaken(x, y);
-            }
-
-            bytes32 hash = _getCoordinateHash(ITokenDescriptor.Coordinate({x: x, y: y}));
-            if (!mintableCoordinates[hash]) {
-                revert PositionNotMintable(x, y);
-            }
-
-            board[x][y] = tokenId;
-            tokenIdToTokenInfo[tokenId] = ITokenDescriptor.Token({
-                initial: ITokenDescriptor.Coordinate({x: x, y: y}),
-                current: ITokenDescriptor.Coordinate({x: x, y: y}),
-                timestamp: block.timestamp,
-                hasReachedEnd: false,
-                isLocked: false,
-                direction: y < 13 ? ITokenDescriptor.Direction.DOWN : ITokenDescriptor.Direction.UP,
-                numMovements: 0
-            });
-
-            if (tokenId != MAX_SUPPLY) {
-                currentTokenId++;
-            } else {
-                _closeMint();
-            }
-
+        for(uint256 i=0; i < coordinates.length; i++) {
+            _mintWithChecks(coordinates[i]);
             
-            _mint(msg.sender, tokenId);
+            uint256 index = coordinateHashToIndex[_getCoordinateHash(coordinates[i])];
+            _removeFromAvailability(index);
         }
     }
 
-    function mintRandom(bytes32[] calldata merkleProof) external payable {
+    function _mintWithChecks(ITokenDescriptor.Coordinate memory coordinate) internal {
+        if (block.timestamp < config.startTime || _isMintingClosed) {
+            revert MintingClosed();
+        }
         
-    }
+        uint256 tokenId = currentTokenId;
+        uint256 x = coordinate.x;
+        uint256 y = coordinate.y;
 
-    function mintAtPosition(ITokenDescriptor.Coordinate[] memory coordinates, bytes32[] calldata merkleProof) external payable {
-        _mintWithChecks(coordinates, merkleProof);
+        if (board[x][y] > 0) {
+            revert PositionCurrentlyTaken(x, y);
+        }
+
+        bytes32 hash = _getCoordinateHash(ITokenDescriptor.Coordinate({x: x, y: y}));
+        if (!mintableCoordinates[hash]) {
+            revert PositionNotMintable(x, y);
+        }
+
+        board[x][y] = tokenId;
+        tokenIdToTokenInfo[tokenId] = ITokenDescriptor.Token({
+            initial: ITokenDescriptor.Coordinate({x: x, y: y}),
+            current: ITokenDescriptor.Coordinate({x: x, y: y}),
+            timestamp: block.timestamp,
+            hasReachedEnd: false,
+            isLocked: false,
+            direction: y < 13 ? ITokenDescriptor.Direction.DOWN : ITokenDescriptor.Direction.UP,
+            numMovements: 0
+        });
+
+        if (tokenId != MAX_SUPPLY) {
+            currentTokenId++;
+        } else {
+            _closeMint();
+        }
+        
+        _mint(msg.sender, tokenId);
     }
 
     function getCurrentPrice() public view returns (uint256) {
@@ -336,7 +358,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
         require(success, "Transfer failed.");
     }
 
-    function _removeByIndex(uint256 index) private {
+    function _removeFromAvailability(uint256 index) private {
         uint256 lastCoordinateIndex = availableCoordinates.length - 1;
         ITokenDescriptor.Coordinate memory lastCoordinate = availableCoordinates[lastCoordinateIndex];
         ITokenDescriptor.Coordinate memory coordinateToBeRemoved = availableCoordinates[index];
