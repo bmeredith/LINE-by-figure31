@@ -39,7 +39,7 @@ contract MetadataGenerator is Constants {
             string.concat('arweave://', Strings.toString(currentImageIndex))
         );
 
-        writer = _generateAttributes(writer);
+        writer = _generateAttributes(writer, token);
 
         writer = writer.writeEndObject();
 
@@ -67,13 +67,11 @@ contract MetadataGenerator is Constants {
 
         uint256 panoramicPoint = numDaysPassed % numPanoramicPoints;
 
-        // at the origin point for the day
+        // is at the origin point for the day
         if (panoramicPoint % 2 == 0) {
             return _calculateImageIndex(token.current.x, token.current.y);            
         }
 
-        uint256 x;
-        uint256 y;
         // 1 = west
         // 3 = northwest
         // 5 = north
@@ -82,6 +80,8 @@ contract MetadataGenerator is Constants {
         // 11 = southeast
         // 13 = south
         // 15 = southwest
+        uint256 x;
+        uint256 y;
         if (panoramicPoint == 1) {
             x = token.current.x - 1;
             y = token.current.y;
@@ -119,12 +119,19 @@ contract MetadataGenerator is Constants {
         return (y * NUM_ROWS) + x;
     }
 
-    function _generateAttributes(JsonWriter.Json memory _writer) 
+    function _generateAttributes(JsonWriter.Json memory _writer, ITokenDescriptor.Token memory token) 
         private 
         pure 
         returns (JsonWriter.Json memory writer)
     {
         writer = _writer.writeStartArray('attributes');
+
+        writer = _addStringAttribute(writer, 'Current Coordinate', string.concat(Strings.toString(token.current.x), ',', Strings.toString(token.current.y)));
+        writer = _addStringAttribute(writer, 'Initial Coordinate', string.concat(Strings.toString(token.initial.x), ',', Strings.toString(token.initial.y)));
+        writer = _addStringAttribute(writer, 'Direction', token.direction == ITokenDescriptor.Direction.UP ? 'Up' : 'Down');
+        writer = _addStringAttribute(writer, 'Has Reached End', token.hasReachedEnd == true ? 'Yes' : 'No');
+        writer = _addStringAttribute(writer, 'Is Locked', token.isLocked == true ? 'Yes' : 'No');
+        writer = _addStringAttribute(writer, 'Number of Movements', Strings.toString(token.numMovements));
 
         writer = writer.writeEndArray();
     }
