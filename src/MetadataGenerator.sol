@@ -33,7 +33,7 @@ contract MetadataGenerator is Constants {
             'https://temp'
         );
 
-        uint256 currentImageIndex = _determineCurrentCycleImage(token);
+        uint256 currentImageIndex = _determineCurrentPanoramicImage(token);
         writer = writer.writeStringProperty(
             'image',
             string.concat('arweave://', Strings.toString(currentImageIndex))
@@ -51,24 +51,24 @@ contract MetadataGenerator is Constants {
         );
     }
 
-    function _determineCurrentCycleImage(ITokenDescriptor.Token calldata token) 
+    function _determineCurrentPanoramicImage(ITokenDescriptor.Token calldata token) 
         private
         pure
         returns (uint256) 
     {
         uint256 numDaysPassed = (token.timestamp / 1 days) % 3600;
-        uint256 numCyclePoints;
+        uint256 numPanoramicPoints;
 
         if (!token.isLocked) {
-            numCyclePoints = 10; // 180° panoramic view
+            numPanoramicPoints = 10; // 180° panoramic view
         } else {
-            numCyclePoints = 16; // 360° panoramic view
+            numPanoramicPoints = 16; // 360° panoramic view
         }
 
-        uint256 cyclePoint = numDaysPassed % numCyclePoints;
+        uint256 panoramicPoint = numDaysPassed % numPanoramicPoints;
 
         // at the origin point for the day
-        if (cyclePoint % 2 == 0) {
+        if (panoramicPoint % 2 == 0) {
             return _calculateImageIndex(token.current.x, token.current.y);            
         }
 
@@ -82,28 +82,28 @@ contract MetadataGenerator is Constants {
         // 11 = southeast
         // 13 = south
         // 15 = southwest
-        if (cyclePoint == 1) {
+        if (panoramicPoint == 1) {
             x = token.current.x - 1;
             y = token.current.y;
-        } else if (cyclePoint == 3) {
+        } else if (panoramicPoint == 3) {
             x = token.current.x - 1;
             y = token.current.y - 1;
-        } else if (cyclePoint == 5) {
+        } else if (panoramicPoint == 5) {
             x = token.current.x;
             y = token.current.y - 1;
-        } else if (cyclePoint == 7) {
+        } else if (panoramicPoint == 7) {
             x = token.current.x + 1;
             y = token.current.y - 1;
-        } else if (cyclePoint == 9) {
+        } else if (panoramicPoint == 9) {
             x = token.current.x + 1;
             y = token.current.y;
-        } else if (cyclePoint == 11) {
+        } else if (panoramicPoint == 11) {
             x = token.current.x + 1;
             y = token.current.y + 1;
-        } else if (cyclePoint == 13) {
+        } else if (panoramicPoint == 13) {
             x = token.current.x;
             y = token.current.y + 1;
-        } else if (cyclePoint == 15) {
+        } else if (panoramicPoint == 15) {
             x = token.current.x - 1;
             y = token.current.y + 1;
         }
