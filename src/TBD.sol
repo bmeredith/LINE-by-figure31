@@ -11,12 +11,15 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 error ExceedsMaxMintPerTransaction();
+error HasNotReachedEnd();
 error IncorrectPrice();
 error InvalidDirection();
+error MaxLockedOriginPointsAlreadyReached();
 error MintingClosed();
 error MovementLocked();
 error NotMinted();
 error NotTokenOwner();
+error OriginPointLocked();
 error PositionCurrentlyTaken(uint256 x, uint256 y);
 error PositionNotMintable(uint256 x, uint256 y);
 error PositionOutOfBounds(uint256 x, uint256 y);
@@ -32,6 +35,7 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
 
     bytes32 public merkleRoot;
     uint256 public currentTokenId = 1;
+    uint256 public numLockedOriginPoints;
     bool private _canMove;
     bool private _isMintingClosed;
 
@@ -231,6 +235,10 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         }
 
         ITokenDescriptor.Token memory token = tokenIdToTokenInfo[tokenId];
+        if (token.isLocked) {
+            revert OriginPointLocked();
+        }
+
         uint256 x = 0;
         if (xDelta == -1) {
             x = token.current.x - 1;
@@ -245,7 +253,7 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             y = token.current.y - 1;
         }
 
-        if (x < 1 || x >= NUM_COLUMNS || y < 1 || y >= NUM_ROWS) {
+        if (_isPositionOutOfBounds(x, y)) {
             revert PositionOutOfBounds(x,y);
         }
 
@@ -260,6 +268,34 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         tokenIdToTokenInfo[currentTokenId].hasReachedEnd = ((token.direction == ITokenDescriptor.Direction.UP && y == 1) || (token.direction == ITokenDescriptor.Direction.DOWN && y == (NUM_ROWS - 1)));
         tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
         tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
+    }
+
+    function lockOriginPoint(uint256 tokenId, uint256 x, uint256 y) external {
+        if (msg.sender != ownerOf(tokenId)) {
+            revert NotTokenOwner();
+        }
+
+        if (_isPositionOutOfBounds(x, y)) {
+            revert PositionOutOfBounds(x,y);
+        }
+
+        if (board[x][y] > 0) {
+            revert PositionCurrentlyTaken(x,y);
+        }
+
+        if (numLockedOriginPoints == MAX_LOCKED_TOKENS) {
+            revert MaxLockedOriginPointsAlreadyReached();
+        }
+
+        ITokenDescriptor.Token memory token = tokenIdToTokenInfo[tokenId];
+        if (!token.hasReachedEnd) {
+            revert HasNotReachedEnd();
+        }
+
+        tokenIdToTokenInfo[currentTokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
+        tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
+        tokenIdToTokenInfo[tokenId].isLocked = true;
+        numLockedOriginPoints++;
     }
 
     function setInitialAvailableCoordinates(ITokenDescriptor.Coordinate[] calldata coordinates) external onlyOwner {
@@ -326,6 +362,10 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
 
     function _getCoordinateHash(ITokenDescriptor.Coordinate memory coordinate) private pure returns (bytes32) {
         return keccak256(abi.encode(coordinate));
+    }
+
+    function _isPositionOutOfBounds(uint256 x, uint256 y) private pure returns (bool) {
+        return x < 1 || x >= NUM_COLUMNS || y < 1 || y >= NUM_ROWS;
     }
 
     function _removeFromAvailability(uint256 index) private {
