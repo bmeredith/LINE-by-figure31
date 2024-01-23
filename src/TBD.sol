@@ -8,6 +8,7 @@ import {ITokenDescriptor} from "./ITokenDescriptor.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 error ExceedsMaxMintPerTransaction();
 error IncorrectPrice();
@@ -20,7 +21,7 @@ error PositionCurrentlyTaken(uint256 x, uint256 y);
 error PositionNotMintable(uint256 x, uint256 y);
 error PositionOutOfBounds(uint256 x, uint256 y);
 
-contract TBD is ERC721, Ownable2Step, Constants {
+contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
 
     struct SalesConfig {
         uint64 startTime;
@@ -51,7 +52,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
         config.endPriceInWei = 200000000000000000; // .2 eth
     }
 
-    function mintRandom(uint256 quantity, bytes32[] calldata merkleProof) external payable {
+    function mintRandom(uint256 quantity, bytes32[] calldata merkleProof) external payable nonReentrant {
         if (quantity > MAX_MINT_PER_TX) {
             revert ExceedsMaxMintPerTransaction();
         }
@@ -74,7 +75,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
         }
     }
 
-    function mintAtPosition(ITokenDescriptor.Coordinate[] memory coordinates, bytes32[] calldata merkleProof) external payable {
+    function mintAtPosition(ITokenDescriptor.Coordinate[] memory coordinates, bytes32[] calldata merkleProof) external payable nonReentrant {
         if (coordinates.length > MAX_MINT_PER_TX) {
             revert ExceedsMaxMintPerTransaction();
         }
