@@ -176,15 +176,6 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
 
         _move(tokenId, 0, -1);
     }
-    
-    function checkMerkleProof(
-        bytes32[] calldata merkleProof,
-        address _address,
-        bytes32 _root
-    ) public pure returns (bool) {
-        bytes32 leaf = keccak256(abi.encodePacked(_address));
-        return MerkleProof.verify(merkleProof, _root, leaf);
-    }
 
     function moveNorthwest(uint256 tokenId) external {
         if (msg.sender != ownerOf(tokenId)) {
@@ -311,14 +302,14 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     function closeMint() external onlyOwner {
         _closeMint();
     }
-
-    function _closeMint() private {
-        _isMintingClosed = true;
-        _canMove = true;
-    }
-
-    function _getCoordinateHash(ITokenDescriptor.Coordinate memory coordinate) private pure returns (bytes32) {
-        return keccak256(abi.encode(coordinate));
+    
+    function checkMerkleProof(
+        bytes32[] calldata merkleProof,
+        address _address,
+        bytes32 _root
+    ) public pure returns (bool) {
+        bytes32 leaf = keccak256(abi.encodePacked(_address));
+        return MerkleProof.verify(merkleProof, _root, leaf);
     }
 
     function getToken(uint256 tokenId) public view returns (ITokenDescriptor.Token memory) {
@@ -354,6 +345,15 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         uint256 balance = address(this).balance;
         (bool success, ) = msg.sender.call{value: balance}("");
         require(success, "Transfer failed.");
+    }
+
+    function _closeMint() private {
+        _isMintingClosed = true;
+        _canMove = true;
+    }
+
+    function _getCoordinateHash(ITokenDescriptor.Coordinate memory coordinate) private pure returns (bytes32) {
+        return keccak256(abi.encode(coordinate));
     }
 
     function _removeFromAvailability(uint256 index) private {
