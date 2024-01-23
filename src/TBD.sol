@@ -37,9 +37,11 @@ contract TBD is ERC721, Ownable2Step, Constants {
     MetadataGenerator private _metadataGenerator;
     SalesConfig public config;
 
+    ITokenDescriptor.Coordinate[] public availableCoordinates;
     uint256[NUM_COLUMNS][NUM_ROWS] public board;
     mapping(bytes32 => bool) public mintableCoordinates;
     mapping(uint256 => ITokenDescriptor.Token) public tokenIdToTokenInfo;
+    mapping(bytes32 => uint256) public coordinateHashToIndex;
 
     constructor() ERC721("TBD", "TBD") Ownable(msg.sender) {
         _metadataGenerator = new MetadataGenerator();
@@ -106,7 +108,7 @@ contract TBD is ERC721, Ownable2Step, Constants {
         }
     }
 
-    function mintRandom() external payable {
+    function mintRandom(bytes32[] calldata merkleProof) external payable {
         
     }
 
@@ -281,6 +283,8 @@ contract TBD is ERC721, Ownable2Step, Constants {
         for (uint256 i = 0; i < coordinates.length; i++) {
             bytes32 hash = _getCoordinateHash(coordinates[i]);
             mintableCoordinates[hash] = true;
+            coordinateHashToIndex[hash] = i;
+            availableCoordinates[i] = coordinates[i];
         }
     }
 
@@ -330,5 +334,16 @@ contract TBD is ERC721, Ownable2Step, Constants {
         uint256 balance = address(this).balance;
         (bool success, ) = msg.sender.call{value: balance}("");
         require(success, "Transfer failed.");
+    }
+
+    function _removeByIndex(uint256 index) private {
+        uint256 lastCoordinateIndex = availableCoordinates.length - 1;
+        ITokenDescriptor.Coordinate memory lastCoordinate = availableCoordinates[lastCoordinateIndex];
+        ITokenDescriptor.Coordinate memory coordinateToBeRemoved = availableCoordinates[index];
+
+        availableCoordinates[index] = lastCoordinate;
+        coordinateHashToIndex[_getCoordinateHash(lastCoordinate)] = index;
+        delete coordinateHashToIndex[_getCoordinateHash(coordinateToBeRemoved)];
+        availableCoordinates.pop();
     }
 }
