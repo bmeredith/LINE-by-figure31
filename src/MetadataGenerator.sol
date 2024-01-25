@@ -7,10 +7,10 @@ import {JsonWriter} from "solidity-json-writer/JsonWriter.sol";
 import {Base64} from '@openzeppelin/contracts/utils/Base64.sol';
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-contract MetadataGenerator is Constants {
+contract MetadataGenerator is ITokenDescriptor, Constants {
     using JsonWriter for JsonWriter.Json;
 
-    function generateMetadata(uint256 tokenId, ITokenDescriptor.Token calldata token) 
+    function generateMetadata(uint256 tokenId, Token calldata token) 
         external 
         pure 
         returns (string memory) 
@@ -36,7 +36,7 @@ contract MetadataGenerator is Constants {
         uint256 currentImageIndex = _determineCurrentPanoramicImage(token);
         writer = writer.writeStringProperty(
             'image',
-            string.concat('arweave://', Strings.toString(currentImageIndex))
+            string.concat('https://picsum.photos/id/', Strings.toString(currentImageIndex), '/200/300')
         );
 
         writer = _generateAttributes(writer, token);
@@ -51,7 +51,7 @@ contract MetadataGenerator is Constants {
         );
     }
 
-    function _determineCurrentPanoramicImage(ITokenDescriptor.Token calldata token) 
+    function _determineCurrentPanoramicImage(Token calldata token) 
         private
         pure
         returns (uint256) 
@@ -119,7 +119,7 @@ contract MetadataGenerator is Constants {
         return (y * NUM_ROWS) + x;
     }
 
-    function _generateAttributes(JsonWriter.Json memory _writer, ITokenDescriptor.Token memory token) 
+    function _generateAttributes(JsonWriter.Json memory _writer, Token memory token) 
         private 
         pure 
         returns (JsonWriter.Json memory writer)
@@ -128,7 +128,7 @@ contract MetadataGenerator is Constants {
 
         writer = _addStringAttribute(writer, 'Current Coordinate', string.concat(Strings.toString(token.current.x), ',', Strings.toString(token.current.y)));
         writer = _addStringAttribute(writer, 'Initial Coordinate', string.concat(Strings.toString(token.initial.x), ',', Strings.toString(token.initial.y)));
-        writer = _addStringAttribute(writer, 'Direction', token.direction == ITokenDescriptor.Direction.UP ? 'Up' : 'Down');
+        writer = _addStringAttribute(writer, 'Direction', token.direction == Direction.UP ? 'Up' : 'Down');
         writer = _addStringAttribute(writer, 'Has Reached End', token.hasReachedEnd == true ? 'Yes' : 'No');
         writer = _addStringAttribute(writer, 'Is Locked', token.isLocked == true ? 'Yes' : 'No');
         writer = _addStringAttribute(writer, 'Number of Movements', Strings.toString(token.numMovements));

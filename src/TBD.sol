@@ -39,7 +39,7 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     bool private _canMove;
     bool private _isMintingClosed;
 
-    MetadataGenerator private _metadataGenerator;
+    ITokenDescriptor public descriptor;
     SalesConfig public config;
 
     ITokenDescriptor.Coordinate[] public availableCoordinates;
@@ -48,8 +48,8 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     mapping(uint256 => ITokenDescriptor.Token) public tokenIdToTokenInfo;
     mapping(bytes32 => uint256) public coordinateHashToIndex;
 
-    constructor() ERC721("TBD", "TBD") Ownable(msg.sender) {
-        _metadataGenerator = new MetadataGenerator();
+    constructor(address _descriptor) ERC721("TBD", "TBD") Ownable(msg.sender) {
+        descriptor = ITokenDescriptor(_descriptor);
         config.startTime = uint64(1704369600);
         config.endTime = uint64(1704369600 + 3600);
         config.startPriceInWei = 1000000000000000000; // 1 eth
@@ -330,7 +330,7 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         }
 
         ITokenDescriptor.Token memory token = tokenIdToTokenInfo[id];
-        return _metadataGenerator.generateMetadata(id, token);
+        return descriptor.generateMetadata(id, token);
     }
 
     function updateConfig(
@@ -343,6 +343,10 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         config.endTime = endTime;
         config.startPriceInWei = startPriceInWei;
         config.endPriceInWei = endPriceInWei;
+    }
+
+    function setDescriptor(address _descriptor) external onlyOwner {
+        descriptor = ITokenDescriptor(_descriptor);
     }
 
     function updateMerkleRoot(bytes32 _root) external onlyOwner {

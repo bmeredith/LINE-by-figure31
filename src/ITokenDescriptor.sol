@@ -21,4 +21,9 @@ interface ITokenDescriptor {
         Direction direction;
         uint256 numMovements;
     }
+
+    function generateMetadata(uint256 tokenId, ITokenDescriptor.Token calldata token)
+        external
+        pure
+        returns (string memory);
 }
