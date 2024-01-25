@@ -7,7 +7,7 @@ import {JsonWriter} from "solidity-json-writer/JsonWriter.sol";
 import {Base64} from '@openzeppelin/contracts/utils/Base64.sol';
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-contract MetadataGenerator is ITokenDescriptor, Constants {
+contract Descriptor is ITokenDescriptor, Constants {
     using JsonWriter for JsonWriter.Json;
 
     function generateMetadata(uint256 tokenId, Token calldata token) 

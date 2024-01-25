@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import {Constants} from "./Constants.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import {MetadataGenerator} from "./MetadataGenerator.sol";
+import {Descriptor} from "./Descriptor.sol";
 import {ITokenDescriptor} from "./ITokenDescriptor.sol";
 import {ERC721} from "solmate/tokens/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
