@@ -11,7 +11,7 @@ contract TBDTest is Test {
     bytes32[] emptyMerkleProof;
 
     function setUp() public {
-        tbd = new TBD();
+        tbd = new TBD(address(0));
         vm.warp(1704369600);
     }
 

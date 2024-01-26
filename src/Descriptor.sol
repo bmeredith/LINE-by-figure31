@@ -30,7 +30,7 @@ contract Descriptor is ITokenDescriptor, Constants {
 
         writer = writer.writeStringProperty(
             'external_url',
-            'https://temp'
+            'https://opensea.io/'
         );
 
         uint256 currentImageIndex = _determineCurrentPanoramicImage(token);

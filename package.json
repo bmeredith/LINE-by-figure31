@@ -6,10 +6,13 @@
   "license": "MIT",
   "scripts": {
     "build": "forge build",
-    "test": "forge test -vvv"
+    "test": "forge test -vvv",
+    "deploy:sepolia": "env-cmd -x forge script DeploySepolia --rpc-url $SEPOLIA_RPC --broadcast --private-key $PRIVATE_KEY --verify --etherscan-api-key $ETHERSCAN_API_KEY"
   },
   "devDependencies": {
     "solhint": "^4.0.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "env-cmd": "^10.1.0"
+  }
 }
