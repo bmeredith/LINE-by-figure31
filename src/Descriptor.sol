@@ -20,7 +20,7 @@ contract Descriptor is ITokenDescriptor, Constants {
 
         writer = writer.writeStringProperty(
             'name',
-            string.concat('TBD ', Strings.toString(tokenId))
+            string.concat('LINE ', Strings.toString(tokenId))
         );
 
         writer = writer.writeStringProperty(

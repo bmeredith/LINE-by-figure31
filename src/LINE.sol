@@ -24,7 +24,7 @@ error PositionCurrentlyTaken(uint256 x, uint256 y);
 error PositionNotMintable(uint256 x, uint256 y);
 error PositionOutOfBounds(uint256 x, uint256 y);
 
-contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
+contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
 
     struct SalesConfig {
         uint64 startTime;
@@ -32,6 +32,10 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         uint256 startPriceInWei;
         uint256 endPriceInWei;
     }
+    
+    uint256 public constant MAX_LOCKED_TOKENS = 20;
+    uint256 public constant MAX_MINT_PER_TX = 3;
+    uint256 public constant MAX_SUPPLY = 200;
 
     bytes32 public merkleRoot;
     uint256 public currentTokenId = 1;
@@ -48,7 +52,7 @@ contract TBD is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     mapping(uint256 => ITokenDescriptor.Token) public tokenIdToTokenInfo;
     mapping(bytes32 => uint256) public coordinateHashToIndex;
 
-    constructor(address _descriptor) ERC721("TBD", "TBD") Ownable(msg.sender) {
+    constructor(address _descriptor) ERC721("LINE", "LINE") Ownable(msg.sender) {
         descriptor = ITokenDescriptor(_descriptor);
         config.startTime = uint64(1704369600);
         config.endTime = uint64(1704369600 + 3600);
