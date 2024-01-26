@@ -47,7 +47,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     SalesConfig public config;
 
     ITokenDescriptor.Coordinate[] public availableCoordinates;
-    uint256[NUM_COLUMNS][NUM_ROWS] public board;
+    uint256[NUM_COLUMNS][NUM_ROWS] public grid;
     mapping(bytes32 => bool) public mintableCoordinates;
     mapping(uint256 => ITokenDescriptor.Token) public tokenIdToTokenInfo;
     mapping(bytes32 => uint256) public coordinateHashToIndex;
@@ -114,7 +114,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         uint256 x = coordinate.x;
         uint256 y = coordinate.y;
 
-        if (board[x][y] > 0) {
+        if (grid[x][y] > 0) {
             revert PositionCurrentlyTaken(x, y);
         }
 
@@ -123,7 +123,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert PositionNotMintable(x, y);
         }
 
-        board[x][y] = tokenId;
+        grid[x][y] = tokenId;
         tokenIdToTokenInfo[tokenId] = ITokenDescriptor.Token({
             initial: ITokenDescriptor.Coordinate({x: x, y: y}),
             current: ITokenDescriptor.Coordinate({x: x, y: y}),
@@ -261,12 +261,12 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert PositionOutOfBounds(x,y);
         }
 
-        if (board[x][y] > 0) {
+        if (grid[x][y] > 0) {
             revert PositionCurrentlyTaken(x,y);
         }
 
-        board[token.current.x][token.current.y] = 0;
-        board[x][y] = tokenId;
+        grid[token.current.x][token.current.y] = 0;
+        grid[x][y] = tokenId;
 
         tokenIdToTokenInfo[currentTokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
         tokenIdToTokenInfo[currentTokenId].hasReachedEnd = ((token.direction == ITokenDescriptor.Direction.UP && y == 1) || (token.direction == ITokenDescriptor.Direction.DOWN && y == (NUM_ROWS - 1)));
@@ -283,7 +283,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert PositionOutOfBounds(x,y);
         }
 
-        if (board[x][y] > 0) {
+        if (grid[x][y] > 0) {
             revert PositionCurrentlyTaken(x,y);
         }
 
