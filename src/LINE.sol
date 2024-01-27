@@ -9,6 +9,7 @@ import {ERC721} from "solmate/tokens/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
 error ExceedsMaxMintPerTransaction();
 error HasNotReachedEnd();
@@ -25,6 +26,8 @@ error PositionNotMintable(uint256 x, uint256 y);
 error PositionOutOfBounds(uint256 x, uint256 y);
 
 contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
+
+    using SafeTransferLib for address payable;
 
     struct SalesConfig {
         uint64 startTime;
@@ -77,14 +80,19 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert IncorrectPrice();
         }
 
-        for (uint256 i=0; i < quantity; i++) {
+        for (uint256 i=0; i < quantity;) {
             ITokenDescriptor.Coordinate memory coordinateToMint = availableCoordinates[0];
             _mintWithChecks(coordinateToMint);
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
     function mintAtPosition(ITokenDescriptor.Coordinate[] memory coordinates, bytes32[] calldata merkleProof) external payable nonReentrant {
-        if (coordinates.length > MAX_MINT_PER_TX) {
+        uint256 numCoordinates = coordinates.length;
+        if (numCoordinates > MAX_MINT_PER_TX) {
             revert ExceedsMaxMintPerTransaction();
         }
         
@@ -96,12 +104,16 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             }
         }
 
-        if (msg.value < (currentPrice * coordinates.length)) {
+        if (msg.value < (currentPrice * numCoordinates)) {
             revert IncorrectPrice();
         }
 
-        for (uint256 i=0; i < coordinates.length; i++) {
+        for (uint256 i=0; i < numCoordinates;) {
             _mintWithChecks(coordinates[i]);
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
