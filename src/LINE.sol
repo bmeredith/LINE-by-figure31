@@ -173,6 +173,10 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         return (decayedPrice / 1000000000000000) * 1000000000000000;
     }
 
+    function getGrid() external view returns (uint256[NUM_COLUMNS][NUM_ROWS] memory) {
+        return grid;
+    }
+
     function moveNorth(uint256 tokenId) external {
         if (tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.UP) {
             revert InvalidDirection();
