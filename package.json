@@ -7,7 +7,8 @@
   "scripts": {
     "build": "forge build",
     "test": "forge test -vvv",
-    "deploy:sepolia": "env-cmd -x forge script DeploySepolia --rpc-url $SEPOLIA_RPC --broadcast --private-key $PRIVATE_KEY --verify --etherscan-api-key $ETHERSCAN_API_KEY"
+    "deploy:localhost": "env-cmd -x forge script DeployLocal --rpc-url http://localhost:8545 --broadcast --private-key $LOCAL_PRIVATE_KEY",
+    "deploy:sepolia": "env-cmd -x forge script DeploySepolia --rpc-url $SEPOLIA_RPC --broadcast --private-key $SEPOLIA_PRIVATE_KEY --verify --etherscan-api-key $ETHERSCAN_API_KEY"
   },
   "devDependencies": {
     "solhint": "^4.0.0"

@@ -1,66 +1,46 @@
-## Foundry
+## Setup
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+1. Install Foundry by following the instructions from [their repository](https://github.com/foundry-rs/foundry#installation).
+2. Copy the `.env.example` file to `.env` and fill in the variables.
+3. Install the dependencies by running: `yarn install`. In case there is an error with the commands, run `foundryup` and try them again.
 
-Foundry consists of:
+## Build
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
+```bash
+yarn build
 ```
 
-### Test
+## Running tests
 
-```shell
-$ forge test
+```bash
+yarn test
 ```
 
-### Format
+## Deploy & verify
 
-```shell
-$ forge fmt
-```
+### Setup
 
-### Gas Snapshots
+Configure the `.env` variables.
 
-```shell
-$ forge snapshot
-```
+### Local
 
-### Anvil
-
+Start up anvil:
 ```shell
 $ anvil
 ```
 
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+Deploy:
+```bash
+yarn deploy:localhost
 ```
 
-### Cast
-
-```shell
-$ cast <subcommand>
+Update auction config:
+```bash
+cast send $CONTRACT_ADDRESS "updateConfig(uint64,uint64,uint256,uint256)" 1704369600 1704373200 1000000000000000000 200000000000000000 --private-key $LOCAL_PRIVATE_KEY
 ```
 
-### Help
+### Sepolia
 
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+```bash
+yarn deploy:sepolia
 ```

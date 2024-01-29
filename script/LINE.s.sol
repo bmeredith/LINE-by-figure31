@@ -25,3 +25,9 @@ contract DeploySepolia is Deploy {
     _deploy();
   }
 }
+
+contract DeployLocal is Deploy {
+  function run() external {
+    _deploy();
+  }
+}
