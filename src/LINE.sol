@@ -156,8 +156,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         _mint(msg.sender, tokenId);
     }
 
-    function getCurrentPrice() public view returns (uint256) {
-        uint256 elapsedTime = ((block.timestamp - config.startTime) / 10 ) * 10;        
+    function getCurrentPrice() public view returns (uint256) {      
         uint256 duration = config.endTime - config.startTime;
         uint256 halflife = 950; // adjust this to adjust speed of decay
 
@@ -165,6 +164,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             return config.startPriceInWei;
         }
 
+        uint256 elapsedTime = ((block.timestamp - config.startTime) / 10 ) * 10;  
         if (elapsedTime >= duration) {
             return config.endPriceInWei;
         }
