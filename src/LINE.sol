@@ -318,6 +318,10 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         numLockedOriginPoints++;
     }
 
+    function getAvailableCoordinates() external view returns (ITokenDescriptor.Coordinate[] memory) {
+        return availableCoordinates;
+    }
+
     function setInitialAvailableCoordinates(ITokenDescriptor.Coordinate[] calldata coordinates) external onlyOwner {
         for (uint256 i = 0; i < coordinates.length; i++) {
             bytes32 hash = _getCoordinateHash(coordinates[i]);
