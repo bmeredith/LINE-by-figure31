@@ -43,6 +43,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     bytes32 public merkleRoot;
     uint256 public currentTokenId = 1;
     uint256 public numLockedOriginPoints;
+    uint256 private  _totalSupply;
     bool private _canMove;
     bool private _isMintingClosed;
 
@@ -152,6 +153,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             _closeMint();
         }
         
+        _totalSupply++;
         _removeFromAvailability(coordinateHashToIndex[hash]);
         _mint(msg.sender, tokenId);
     }
@@ -348,6 +350,22 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         return tokenIdToTokenInfo[tokenId];
     }
 
+    function tokensOfOwner(address _owner) public view returns (uint256[] memory) {
+        uint256 balance = balanceOf(_owner);
+        uint256[] memory tokens = new uint256[](balance);
+        uint256 index;
+        unchecked {
+            for (uint256 i; i < _totalSupply; i++) {
+                if (ownerOf(i) == _owner) {
+                    tokens[index] = uint256(i);
+                    index++;
+                }
+            }
+        }
+        
+        return tokens;
+    }
+
     function tokenURI(uint256 id) public view virtual override returns (string memory) {
         if (ownerOf(id) == address(0)) {
             revert NotMinted();
@@ -355,6 +373,10 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
 
         ITokenDescriptor.Token memory token = tokenIdToTokenInfo[id];
         return descriptor.generateMetadata(id, token);
+    }
+
+    function totalSupply() public view returns (uint256) {
+        return _totalSupply;
     }
 
     function updateConfig(
