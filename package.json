@@ -8,6 +8,8 @@
     "build": "forge build",
     "test": "forge test -vvv",
     "deploy:localhost": "env-cmd -x forge script DeployLocal --rpc-url http://localhost:8545 --memory-limit 256000000 --broadcast --private-key $LOCAL_PRIVATE_KEY",
+    "set-config": "env-cmd -x forge script ChangeSetup --rpc-url http://localhost:8545 --broadcast --private-key $LOCAL_PRIVATE_KEY",
+    "add-coordinates": "env-cmd -x forge script AddCoordinates --rpc-url http://localhost:8545 --broadcast --private-key $LOCAL_PRIVATE_KEY",
     "deploy:sepolia": "env-cmd -x forge script DeploySepolia --rpc-url $SEPOLIA_RPC --broadcast --private-key $SEPOLIA_PRIVATE_KEY --verify --etherscan-api-key $ETHERSCAN_API_KEY"
   },
   "devDependencies": {
