@@ -43,8 +43,8 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     bytes32 public merkleRoot;
     uint256 public currentTokenId = 1;
     uint256 public numLockedOriginPoints;
+    bool public canMove;
     uint256 private  _totalSupply;
-    bool private _canMove;
     bool private _isMintingClosed;
 
     ITokenDescriptor public descriptor;
@@ -266,7 +266,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert NotTokenOwner();
         }
 
-        if (!_canMove) {
+        if (!canMove) {
             revert MovementLocked();
         }
 
@@ -421,7 +421,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
 
     function _closeMint() private {
         _isMintingClosed = true;
-        _canMove = true;
+        canMove = true;
     }
 
     function _getCoordinateHash(ITokenDescriptor.Coordinate memory coordinate) private pure returns (bytes32) {
