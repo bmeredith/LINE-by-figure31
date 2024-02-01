@@ -369,9 +369,9 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         uint256[] memory tokens = new uint256[](balance);
         uint256 index;
         unchecked {
-            for (uint256 i; i < _totalSupply; i++) {
+            for (uint256 i=1; i <= _totalSupply; i++) {
                 if (ownerOf(i) == _owner) {
-                    tokens[index] = uint256(i);
+                    tokens[index] = i;
                     index++;
                 }
             }

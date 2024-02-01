@@ -64,6 +64,12 @@ contract TBDTest is Test {
         line.setInitialAvailableCoordinates(_generateCoordinates(1));
 
         line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
+
+        uint256[] memory tokenIds = line.tokensOfOwner(0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496);
+        for(uint256 i=0;i < tokenIds.length;i++) {
+            console.log(tokenIds[i]);
+        }
+
         string memory tokenUri = line.tokenURI(1);
         console.log(tokenUri);
     }
