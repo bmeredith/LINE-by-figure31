@@ -191,6 +191,20 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         return grid;
     }
 
+    function getTokens() external view returns (ITokenDescriptor.Token[] memory) {
+        ITokenDescriptor.Token[] memory tokens = new ITokenDescriptor.Token[](_totalSupply);
+
+        for(uint256 i=0;i < _totalSupply;) {
+            tokens[i] = tokenIdToTokenInfo[i+1];
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        return tokens;
+    }
+
     function moveNorth(uint256 tokenId) external {
         if (tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.UP) {
             revert InvalidDirection();
