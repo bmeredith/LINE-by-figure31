@@ -77,17 +77,27 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             }
         }
 
-        if (msg.value < (currentPrice * quantity)) {
+        uint256 totalPrice = currentPrice * quantity;
+        if (msg.value < totalPrice) {
             revert IncorrectPrice();
         }
 
+        uint256 ethToReturn;
         for (uint256 i=0; i < quantity;) {
             ITokenDescriptor.Coordinate memory coordinateToMint = availableCoordinates[0];
-            _mintWithChecks(coordinateToMint);
+            bool success = _mintWithChecks(coordinateToMint);
+            if (!success) {
+                ethToReturn += currentPrice;
+            }
 
             unchecked {
                 ++i;
             }
+        }
+
+        // return eth for any pieces that failed to mint because a point on the board was already taken when the mint occurred
+        if (ethToReturn > 0) {
+            payable(msg.sender).safeTransferETH(ethToReturn);
         }
     }
 
@@ -109,16 +119,25 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert IncorrectPrice();
         }
 
+        uint256 ethToReturn;
         for (uint256 i=0; i < numCoordinates;) {
-            _mintWithChecks(coordinates[i]);
+            bool success = _mintWithChecks(coordinates[i]);
+            if (!success) {
+                ethToReturn += currentPrice;
+            }
 
             unchecked {
                 ++i;
             }
         }
+
+        // return eth for any pieces that failed to mint because a point on the board was already taken when the mint occurred
+        if (ethToReturn > 0) {
+            payable(msg.sender).safeTransferETH(ethToReturn);
+        }
     }
 
-    function _mintWithChecks(ITokenDescriptor.Coordinate memory coordinate) internal {
+    function _mintWithChecks(ITokenDescriptor.Coordinate memory coordinate) internal returns (bool) {
         if (block.timestamp < config.startTime || _isMintingClosed) {
             revert MintingClosed();
         }
@@ -128,7 +147,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         uint256 y = coordinate.y;
 
         if (grid[x][y] > 0) {
-            revert PositionCurrentlyTaken(x, y);
+            return false;
         }
 
         bytes32 hash = _getCoordinateHash(ITokenDescriptor.Coordinate({x: x, y: y}));
@@ -156,6 +175,8 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         _totalSupply++;
         _removeFromAvailability(coordinateHashToIndex[hash]);
         _mint(msg.sender, tokenId);
+
+        return true;
     }
 
     function getCurrentPrice() public view returns (uint256) {      
