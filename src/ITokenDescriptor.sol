@@ -24,6 +24,6 @@ interface ITokenDescriptor {
 
     function generateMetadata(uint256 tokenId, ITokenDescriptor.Token calldata token)
         external
-        pure
+        view
         returns (string memory);
 }

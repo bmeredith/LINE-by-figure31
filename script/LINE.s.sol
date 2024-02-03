@@ -13,6 +13,9 @@ abstract contract Deploy is Script {
         LINE line = new LINE(address(descriptor));
 
         line.setInitialAvailableCoordinates(_getMintableCoordinates());
+        line.updateConfig(
+            uint64(1704369600), uint64(1704373200), 1000000000000000000, 1000000000000000
+        );
         vm.stopBroadcast();
     }
 

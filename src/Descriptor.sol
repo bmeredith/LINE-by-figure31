@@ -12,7 +12,7 @@ contract Descriptor is ITokenDescriptor, Constants {
 
     function generateMetadata(uint256 tokenId, Token calldata token) 
         external 
-        pure 
+        view 
         returns (string memory) 
     {
         JsonWriter.Json memory writer;
@@ -53,10 +53,10 @@ contract Descriptor is ITokenDescriptor, Constants {
 
     function _determineCurrentPanoramicImage(Token calldata token) 
         private
-        pure
+        view
         returns (uint256) 
     {
-        uint256 numDaysPassed = (token.timestamp / 1 days) % 3600;
+        uint256 numDaysPassed = (block.timestamp - token.timestamp) / 1 days;
         uint256 numPanoramicPoints;
 
         if (!token.isLocked) {
@@ -72,6 +72,10 @@ contract Descriptor is ITokenDescriptor, Constants {
             return _calculateImageIndex(token.current.x, token.current.y);            
         }
 
+        uint256 x;
+        uint256 y;
+
+        // full panoramic view
         // 1 = west
         // 3 = northwest
         // 5 = north
@@ -80,8 +84,92 @@ contract Descriptor is ITokenDescriptor, Constants {
         // 11 = southeast
         // 13 = south
         // 15 = southwest
-        uint256 x;
-        uint256 y;
+        if (token.isLocked) {
+            if (panoramicPoint == 1) {
+                x = token.current.x - 1;
+                y = token.current.y;
+            } else if (panoramicPoint == 3) {
+                x = token.current.x - 1;
+                y = token.current.y + 1;
+            } else if (panoramicPoint == 5) {
+                x = token.current.x;
+                y = token.current.y + 1;
+            } else if (panoramicPoint == 7) {
+                x = token.current.x + 1;
+                y = token.current.y + 1;
+            } else if (panoramicPoint == 9) {
+                x = token.current.x + 1;
+                y = token.current.y;
+            } else if (panoramicPoint == 11) {
+                x = token.current.x + 1;
+                y = token.current.y - 1;
+            } else if (panoramicPoint == 13) {
+                x = token.current.x;
+                y = token.current.y - 1;
+            } else if (panoramicPoint == 15) {
+                x = token.current.x - 1;
+                y = token.current.y - 1;
+            }
+
+            return _calculateImageIndex(x, y);
+        }
+
+        // 1 = look west
+        // 3 = look southwest
+        // 5 = look south
+        // 7 = look southeast
+        // 9 = look east
+        if (token.direction == Direction.DOWN) {
+            if (panoramicPoint == 1) {
+                x = token.current.x - 1;
+                y = token.current.y;
+            } else if (panoramicPoint == 3) {
+                x = token.current.x - 1;
+                y = token.current.y - 1;
+            } else if (panoramicPoint == 5) {
+                x = token.current.x;
+                y = token.current.y - 1;
+            } else if (panoramicPoint == 7) {
+                x = token.current.x + 1;
+                y = token.current.y - 1;
+            } else if (panoramicPoint == 9) {
+                x = token.current.x + 1;
+                y = token.current.y;
+            }
+        }
+        
+        // 1 = look west
+        // 3 = look northwest
+        // 5 = look north
+        // 7 = look northeast
+        // 9 = look east
+        if (token.direction == Direction.UP) {
+            if (panoramicPoint == 1) {
+                x = token.current.x - 1;
+                y = token.current.y;
+            } else if (panoramicPoint == 3) {
+                x = token.current.x - 1;
+                y = token.current.y + 1;
+            } else if (panoramicPoint == 5) {
+                x = token.current.x;
+                y = token.current.y + 1;
+            } else if (panoramicPoint == 7) {
+                x = token.current.x + 1;
+                y = token.current.y + 1;
+            } else if (panoramicPoint == 9) {
+                x = token.current.x + 1;
+                y = token.current.y;
+            }
+        }
+
+        // 1 = west
+        // 3 = northwest
+        // 5 = north
+        // 7 = northeast
+        // 9 = east
+        // 11 = southeast
+        // 13 = south
+        // 15 = southwest
         if (panoramicPoint == 1) {
             x = token.current.x - 1;
             y = token.current.y;
@@ -116,7 +204,8 @@ contract Descriptor is ITokenDescriptor, Constants {
         pure
         returns (uint256) 
     {
-        return ((NUM_ROWS - y - 1) * NUM_COLUMNS) + x;
+        uint256 yIndex = (NUM_ROWS - 1) - y;
+        return ((NUM_ROWS - yIndex - 1) * NUM_COLUMNS) + x;
     }
 
     function _generateAttributes(JsonWriter.Json memory _writer, Token memory token) 

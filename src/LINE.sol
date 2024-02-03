@@ -145,9 +145,9 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         uint256 tokenId = currentTokenId;
         uint256 x = coordinate.x;
         uint256 y = coordinate.y;
-        uint256 yIndex = _calculateYGridIndex(y);
+        uint256 yIndex = _calculateYGridIndex(y); 
 
-        if (grid[x][yIndex] > 0) {
+        if (grid[yIndex][x] > 0) {
             return false;
         }
 
@@ -156,7 +156,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert PositionNotMintable(x, y);
         }
 
-        grid[x][yIndex] = tokenId;
+        grid[yIndex][x] = tokenId;
         tokenIdToTokenInfo[tokenId] = ITokenDescriptor.Token({
             initial: ITokenDescriptor.Coordinate({x: x, y: y}),
             current: ITokenDescriptor.Coordinate({x: x, y: y}),
@@ -316,17 +316,17 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert PositionOutOfBounds(x,y);
         }
 
-        if (grid[x][yGridIndex] > 0) {
+        if (grid[yGridIndex][x] > 0) {
             revert PositionCurrentlyTaken(x,y);
         }
 
-        grid[token.current.x][_calculateYGridIndex(token.current.y)] = 0;
-        grid[x][yGridIndex] = tokenId;
+        grid[_calculateYGridIndex(token.current.y)][token.current.x] = 0;
+        grid[yGridIndex][x] = tokenId;
 
-        tokenIdToTokenInfo[currentTokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
-        tokenIdToTokenInfo[currentTokenId].hasReachedEnd = ((token.direction == ITokenDescriptor.Direction.UP && y == (NUM_ROWS - 1)) || (token.direction == ITokenDescriptor.Direction.DOWN && y == 1));
-        tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
-        tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
+        tokenIdToTokenInfo[tokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
+        tokenIdToTokenInfo[tokenId].hasReachedEnd = ((token.direction == ITokenDescriptor.Direction.UP && y == (NUM_ROWS - 1)) || (token.direction == ITokenDescriptor.Direction.DOWN && y == 1));
+        tokenIdToTokenInfo[tokenId].numMovements = ++token.numMovements;
+        tokenIdToTokenInfo[tokenId].timestamp = block.timestamp;
     }
 
     function lockOriginPoint(uint256 tokenId, uint256 x, uint256 y) external {
@@ -339,7 +339,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         }
 
         uint256 yGridIndex = _calculateYGridIndex(y);
-        if (grid[x][yGridIndex] > 0) {
+        if (grid[yGridIndex][x] > 0) {
             revert PositionCurrentlyTaken(x,y);
         }
 
@@ -351,12 +351,16 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         if (!token.hasReachedEnd) {
             revert HasNotReachedEnd();
         }
+        
+        if (token.isLocked) {
+            revert OriginPointLocked();
+        }
 
-        grid[token.current.x][_calculateYGridIndex(token.current.y)] = 0;
-        grid[x][yGridIndex] = tokenId;
+        grid[_calculateYGridIndex(token.current.y)][token.current.x] = 0;
+        grid[yGridIndex][x] = tokenId;
 
-        tokenIdToTokenInfo[currentTokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
-        tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
+        tokenIdToTokenInfo[tokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
+        tokenIdToTokenInfo[tokenId].timestamp = block.timestamp;
         tokenIdToTokenInfo[tokenId].isLocked = true;
         numLockedOriginPoints++;
     }
@@ -465,7 +469,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     function _isPositionOutOfBounds(uint256 x, uint256 y) private pure returns (bool) {
-        return x < 1 || x >= NUM_COLUMNS || y < 1 || y >= NUM_ROWS;
+        return x < 1 || x >= NUM_COLUMNS - 1 || y < 1 || y >= NUM_ROWS - 1;
     }
 
     function _removeFromAvailability(uint256 index) private {
