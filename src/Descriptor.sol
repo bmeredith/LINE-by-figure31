@@ -116,7 +116,7 @@ contract Descriptor is ITokenDescriptor, Constants {
         pure
         returns (uint256) 
     {
-        return (y * NUM_ROWS) + x;
+        return ((NUM_ROWS - y - 1) * NUM_COLUMNS) + x;
     }
 
     function _generateAttributes(JsonWriter.Json memory _writer, Token memory token) 

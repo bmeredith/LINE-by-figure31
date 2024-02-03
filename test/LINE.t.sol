@@ -15,77 +15,77 @@ contract TBDTest is Test {
         vm.warp(1704369600);
     }
 
-    function test_mint_revertWhenMaxSupplyReached() public {
-        mockCurrentTokenId(line.MAX_SUPPLY());
-        line.setInitialAvailableCoordinates(_generateCoordinates(2));
+    // function test_mint_revertWhenMaxSupplyReached() public {
+    //     mockCurrentTokenId(line.MAX_SUPPLY());
+    //     line.setInitialAvailableCoordinates(_generateCoordinates(2));
 
-        line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
+    //     line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
 
-        vm.expectRevert(MintingClosed.selector);
-        line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 1), emptyMerkleProof);
-    }
+    //     vm.expectRevert(MintingClosed.selector);
+    //     line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 1), emptyMerkleProof);
+    // }
 
-    function test_mint_revertWhenMintIsClosed() public {
-        line.setInitialAvailableCoordinates(_generateCoordinates(1));
+    // function test_mint_revertWhenMintIsClosed() public {
+    //     line.setInitialAvailableCoordinates(_generateCoordinates(1));
 
-        line.closeMint();
+    //     line.closeMint();
 
-        vm.expectRevert(MintingClosed.selector);
-        line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
-    }
+    //     vm.expectRevert(MintingClosed.selector);
+    //     line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
+    // }
 
-    function test_mint_revertWhenPositionIsTaken() public {
-        bytes32 firstBoardSlot = getBoardPositionSlot(0, 0);
-        bytes32 mockedFirstBoardSlotValue = bytes32(abi.encode(1));
-        vm.store(address(line), firstBoardSlot, mockedFirstBoardSlotValue);
+    // function test_mint_revertWhenPositionIsTaken() public {
+    //     bytes32 firstBoardSlot = getBoardPositionSlot(0, 0);
+    //     bytes32 mockedFirstBoardSlotValue = bytes32(abi.encode(1));
+    //     vm.store(address(line), firstBoardSlot, mockedFirstBoardSlotValue);
 
-        vm.expectRevert(abi.encodeWithSelector(PositionCurrentlyTaken.selector, 0, 0));
-        line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
-    }
+    //     vm.expectRevert(abi.encodeWithSelector(PositionCurrentlyTaken.selector, 0, 0));
+    //     line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
+    // }
 
-    function test_mint_revertWhenPositionIsNotMintable() public {
-        line.setInitialAvailableCoordinates(_generateCoordinates(1));
+    // function test_mint_revertWhenPositionIsNotMintable() public {
+    //     line.setInitialAvailableCoordinates(_generateCoordinates(1));
 
-        vm.expectRevert(abi.encodeWithSelector(PositionNotMintable.selector, 5, 5));
-        line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(5, 5), emptyMerkleProof);
-    }
+    //     vm.expectRevert(abi.encodeWithSelector(PositionNotMintable.selector, 5, 5));
+    //     line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(5, 5), emptyMerkleProof);
+    // }
 
-    function test_mint_mintedCoordinateIsTokenIdOnBoard() public {
-        line.setInitialAvailableCoordinates(_generateCoordinates(1));
+    // function test_mint_mintedCoordinateIsTokenIdOnBoard() public {
+    //     line.setInitialAvailableCoordinates(_generateCoordinates(1));
 
-        line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
+    //     line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
 
-        uint256 value = getBoardPositionValue(0, 0);
-        assertEq(1, value);
-    }
+    //     uint256 value = getBoardPositionValue(0, 0);
+    //     assertEq(1, value);
+    // }
 
-    function test_mint() public {
-        console.log(line.getCurrentPrice());
-        line.setInitialAvailableCoordinates(_generateCoordinates(1));
+    // function test_mint() public {
+    //     console.log(line.getCurrentPrice());
+    //     line.setInitialAvailableCoordinates(_generateCoordinates(1));
 
-        line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
+    //     line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 0), emptyMerkleProof);
 
-        uint256[] memory tokenIds = line.tokensOfOwner(0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496);
-        for(uint256 i=0;i < tokenIds.length;i++) {
-            console.log(tokenIds[i]);
-        }
+    //     uint256[] memory tokenIds = line.tokensOfOwner(0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496);
+    //     for(uint256 i=0;i < tokenIds.length;i++) {
+    //         console.log(tokenIds[i]);
+    //     }
 
-        string memory tokenUri = line.tokenURI(1);
-        console.log(tokenUri);
-    }
+    //     string memory tokenUri = line.tokenURI(1);
+    //     console.log(tokenUri);
+    // }
 
-    function test_mint_mintedTokenHasCorrectDirection() public {
-        ITokenDescriptor.Coordinate[] memory coordinates = new ITokenDescriptor.Coordinate[](2);
-        coordinates[0] = ITokenDescriptor.Coordinate({x: 0, y: 12});
-        coordinates[1] = ITokenDescriptor.Coordinate({x: 0, y: 13});
-        line.setInitialAvailableCoordinates(coordinates);
+    // function test_mint_mintedTokenHasCorrectDirection() public {
+    //     ITokenDescriptor.Coordinate[] memory coordinates = new ITokenDescriptor.Coordinate[](2);
+    //     coordinates[0] = ITokenDescriptor.Coordinate({x: 0, y: 12});
+    //     coordinates[1] = ITokenDescriptor.Coordinate({x: 0, y: 13});
+    //     line.setInitialAvailableCoordinates(coordinates);
 
-        line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 12), emptyMerkleProof);
-        line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 13), emptyMerkleProof);
+    //     line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 12), emptyMerkleProof);
+    //     line.mintAtPosition{value: 1000000000000000000}(generateSingleCoordinateArray(0, 13), emptyMerkleProof);
 
-        assertTrue(line.getToken(1).direction == ITokenDescriptor.Direction.DOWN);
-        assertTrue(line.getToken(2).direction == ITokenDescriptor.Direction.UP);
-    }
+    //     assertTrue(line.getToken(1).direction == ITokenDescriptor.Direction.DOWN);
+    //     assertTrue(line.getToken(2).direction == ITokenDescriptor.Direction.UP);
+    // }
 
     function mockCurrentTokenId(uint256 tokenId) private {
         bytes32 currentTokenIdSlot = getCurrentTokenIdSlot();

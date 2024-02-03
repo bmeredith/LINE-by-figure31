@@ -16,17 +16,30 @@ abstract contract Deploy is Script {
         vm.stopBroadcast();
     }
 
-    function _getMintableCoordinates() private view returns (ITokenDescriptor.Coordinate[] memory) {
-        ITokenDescriptor.Coordinate[] memory coordinates = new ITokenDescriptor.Coordinate[](20);
-        for (uint256 i = 0; i < 20; i++) {
-            uint256 randomX;
-            uint256 randomY;
-            randomX = uint256(keccak256(abi.encode(block.timestamp, i))) % 24 + 1;
-            randomY = uint256(keccak256(abi.encode(block.timestamp, i + 20))) % 24 + 1;
-            coordinates[i] = ITokenDescriptor.Coordinate({x: randomX, y: randomY});
+    uint256[] coordinates;     
+    function _getMintableCoordinates() private returns (uint256[] memory) {   
+        for(uint256 i=601;i < 624;i++) {
+            coordinates.push(i);
         }
+
+        for(uint256 i=526;i < 549;i++) {
+            coordinates.push(i);
+        }
+
         return coordinates;
     }
+
+    // function _getMintableCoordinates() private view returns (ITokenDescriptor.Coordinate[] memory) {
+    //     ITokenDescriptor.Coordinate[] memory coordinates = new ITokenDescriptor.Coordinate[](20);
+    //     for (uint256 i = 0; i < 20; i++) {
+    //         uint256 randomX;
+    //         uint256 randomY;
+    //         randomX = uint256(keccak256(abi.encode(block.timestamp, i))) % 24 + 1;
+    //         randomY = uint256(keccak256(abi.encode(block.timestamp, i + 20))) % 24 + 1;
+    //         coordinates[i] = ITokenDescriptor.Coordinate({x: randomX, y: randomY});
+    //     }
+    //     return coordinates;
+    // }
 }
 
 contract DeployMainnet is Deploy {

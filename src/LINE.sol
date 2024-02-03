@@ -145,8 +145,9 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         uint256 tokenId = currentTokenId;
         uint256 x = coordinate.x;
         uint256 y = coordinate.y;
+        uint256 yIndex = _calculateYGridIndex(y);
 
-        if (grid[x][y] > 0) {
+        if (grid[x][yIndex] > 0) {
             return false;
         }
 
@@ -155,14 +156,14 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert PositionNotMintable(x, y);
         }
 
-        grid[x][y] = tokenId;
+        grid[x][yIndex] = tokenId;
         tokenIdToTokenInfo[tokenId] = ITokenDescriptor.Token({
             initial: ITokenDescriptor.Coordinate({x: x, y: y}),
             current: ITokenDescriptor.Coordinate({x: x, y: y}),
             timestamp: block.timestamp,
             hasReachedEnd: false,
             isLocked: false,
-            direction: y < 13 ? ITokenDescriptor.Direction.DOWN : ITokenDescriptor.Direction.UP,
+            direction: y >= 12 ? ITokenDescriptor.Direction.DOWN : ITokenDescriptor.Direction.UP,
             numMovements: 0
         });
 
@@ -296,33 +297,34 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert OriginPointLocked();
         }
 
-        uint256 x = 0;
+        uint256 x = token.current.x;
         if (xDelta == -1) {
-            x = token.current.x - 1;
+            x--;
         } else if (xDelta == 1) {
-            x = token.current.x + 1;
+            x++;
         }
 
-        uint256 y = 0;
+        uint256 y = token.current.y;
         if (yDelta == -1) {
-            y = token.current.y + 1;
+            y++;
         } else if (yDelta == 1) {
-            y = token.current.y - 1;
+            y--;
         }
+        uint256 yGridIndex = _calculateYGridIndex(y);
 
         if (_isPositionOutOfBounds(x, y)) {
             revert PositionOutOfBounds(x,y);
         }
 
-        if (grid[x][y] > 0) {
+        if (grid[x][yGridIndex] > 0) {
             revert PositionCurrentlyTaken(x,y);
         }
 
-        grid[token.current.x][token.current.y] = 0;
-        grid[x][y] = tokenId;
+        grid[token.current.x][_calculateYGridIndex(token.current.y)] = 0;
+        grid[x][yGridIndex] = tokenId;
 
         tokenIdToTokenInfo[currentTokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
-        tokenIdToTokenInfo[currentTokenId].hasReachedEnd = ((token.direction == ITokenDescriptor.Direction.UP && y == 1) || (token.direction == ITokenDescriptor.Direction.DOWN && y == (NUM_ROWS - 1)));
+        tokenIdToTokenInfo[currentTokenId].hasReachedEnd = ((token.direction == ITokenDescriptor.Direction.UP && y == (NUM_ROWS - 1)) || (token.direction == ITokenDescriptor.Direction.DOWN && y == 1));
         tokenIdToTokenInfo[currentTokenId].numMovements = token.numMovements++;
         tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
     }
@@ -336,7 +338,8 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert PositionOutOfBounds(x,y);
         }
 
-        if (grid[x][y] > 0) {
+        uint256 yGridIndex = _calculateYGridIndex(y);
+        if (grid[x][yGridIndex] > 0) {
             revert PositionCurrentlyTaken(x,y);
         }
 
@@ -349,6 +352,9 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert HasNotReachedEnd();
         }
 
+        grid[token.current.x][_calculateYGridIndex(token.current.y)] = 0;
+        grid[x][yGridIndex] = tokenId;
+
         tokenIdToTokenInfo[currentTokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
         tokenIdToTokenInfo[currentTokenId].timestamp = block.timestamp;
         tokenIdToTokenInfo[tokenId].isLocked = true;
@@ -359,12 +365,17 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         return availableCoordinates;
     }
 
-    function setInitialAvailableCoordinates(ITokenDescriptor.Coordinate[] calldata coordinates) external onlyOwner {
-        for (uint256 i = 0; i < coordinates.length; i++) {
-            bytes32 hash = _getCoordinateHash(coordinates[i]);
+    function setInitialAvailableCoordinates(uint256[] calldata positions) external onlyOwner {
+        for (uint256 i = 0; i < positions.length; i++) {
+            uint256 position = positions[i];
+            uint256 x = position % NUM_COLUMNS;
+            uint256 y = (position - x) / NUM_ROWS;
+            ITokenDescriptor.Coordinate memory coordinate = ITokenDescriptor.Coordinate({x: x, y: y});
+
+            bytes32 hash = _getCoordinateHash(coordinate);
             mintableCoordinates[hash] = true;
             coordinateHashToIndex[hash] = i;
-            availableCoordinates.push(coordinates[i]);
+            availableCoordinates.push(coordinate);
         }
     }
 
@@ -443,6 +454,10 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     function _closeMint() private {
         _isMintingClosed = true;
         canMove = true;
+    }
+
+    function _calculateYGridIndex(uint256 y) private pure returns (uint256) {
+        return (NUM_ROWS - 1) - y;
     }
 
     function _getCoordinateHash(ITokenDescriptor.Coordinate memory coordinate) private pure returns (bytes32) {
