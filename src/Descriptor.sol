@@ -162,40 +162,6 @@ contract Descriptor is ITokenDescriptor, Constants {
             }
         }
 
-        // 1 = west
-        // 3 = northwest
-        // 5 = north
-        // 7 = northeast
-        // 9 = east
-        // 11 = southeast
-        // 13 = south
-        // 15 = southwest
-        if (panoramicPoint == 1) {
-            x = token.current.x - 1;
-            y = token.current.y;
-        } else if (panoramicPoint == 3) {
-            x = token.current.x - 1;
-            y = token.current.y - 1;
-        } else if (panoramicPoint == 5) {
-            x = token.current.x;
-            y = token.current.y - 1;
-        } else if (panoramicPoint == 7) {
-            x = token.current.x + 1;
-            y = token.current.y - 1;
-        } else if (panoramicPoint == 9) {
-            x = token.current.x + 1;
-            y = token.current.y;
-        } else if (panoramicPoint == 11) {
-            x = token.current.x + 1;
-            y = token.current.y + 1;
-        } else if (panoramicPoint == 13) {
-            x = token.current.x;
-            y = token.current.y + 1;
-        } else if (panoramicPoint == 15) {
-            x = token.current.x - 1;
-            y = token.current.y + 1;
-        }
-
         return _calculateImageIndex(x, y);
     }
     
