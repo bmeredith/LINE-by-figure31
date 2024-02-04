@@ -42,7 +42,8 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     uint256 public constant MAX_SUPPLY = 200;
     uint256 internal immutable FUNDS_SEND_GAS_LIMIT = 210_000;
 
-    bytes32 public merkleRoot;
+    bytes32 public holdersMerkleRoot;
+    bytes32 public fpMembersMerkleRoot;
 
     uint256 public currentTokenId = 1;
     uint256 public numLockedOriginPoints;
@@ -75,10 +76,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         
         uint256 currentPrice = getCurrentPrice();
         if (merkleProof.length > 0) {
-            bool hasDiscount = checkMerkleProof(merkleProof, msg.sender, merkleRoot);
-            if (hasDiscount) {
-                currentPrice = (currentPrice * 80) / 100; // 20% off
-            }
+            currentPrice = _getDiscountedCurrentPrice(merkleProof, msg.sender, currentPrice);
         }
 
         uint256 totalPrice = currentPrice * quantity;
@@ -113,10 +111,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         
         uint256 currentPrice = getCurrentPrice();
         if (merkleProof.length > 0) {
-            bool hasDiscount = checkMerkleProof(merkleProof, msg.sender, merkleRoot);
-            if (hasDiscount) {
-                currentPrice = (currentPrice * 80) / 100; // 20% off
-            }
+            currentPrice = _getDiscountedCurrentPrice(merkleProof, msg.sender, currentPrice);
         }
 
         if (msg.value < (currentPrice * numCoordinates)) {
@@ -451,8 +446,9 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         descriptor = ITokenDescriptor(_descriptor);
     }
 
-    function updateMerkleRoot(bytes32 _root) external onlyOwner {
-        merkleRoot = _root;
+    function updateMerkleRoots(bytes32 _holderRoot, bytes32 _fpMembersRoot) external onlyOwner {
+        holdersMerkleRoot = _holderRoot;
+        fpMembersMerkleRoot = _fpMembersRoot;
     }
 
     function withdraw() external onlyOwner {
@@ -475,6 +471,17 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
 
     function _getCoordinateHash(ITokenDescriptor.Coordinate memory coordinate) private pure returns (bytes32) {
         return keccak256(abi.encode(coordinate));
+    }
+
+    function _getDiscountedCurrentPrice(bytes32[] calldata merkleProof, address addressToCheck, uint256 currentPrice) private view returns (uint256) {
+        bool isHolder = checkMerkleProof(merkleProof, addressToCheck, holdersMerkleRoot);
+        bool isFpMember = checkMerkleProof(merkleProof, addressToCheck, fpMembersMerkleRoot);
+
+        if (isFpMember) {
+            currentPrice = (currentPrice * 85) / 100; // 15% off
+        } else if (isHolder) {
+            currentPrice = (currentPrice * 75) / 100; // 25% off
+        }
     }
 
     function _isPositionOutOfBounds(uint256 x, uint256 y) private pure returns (bool) {
