@@ -34,13 +34,16 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         uint64 endTime;
         uint256 startPriceInWei;
         uint256 endPriceInWei;
+        address payable fundsRecipient;
     }
     
     uint256 public constant MAX_LOCKED_TOKENS = 20;
     uint256 public constant MAX_MINT_PER_TX = 3;
     uint256 public constant MAX_SUPPLY = 200;
+    uint256 internal immutable FUNDS_SEND_GAS_LIMIT = 210_000;
 
     bytes32 public merkleRoot;
+
     uint256 public currentTokenId = 1;
     uint256 public numLockedOriginPoints;
     bool public canMove;
@@ -62,6 +65,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         config.endTime = uint64(1704369600 + 3600);
         config.startPriceInWei = 1000000000000000000; // 1 eth
         config.endPriceInWei = 200000000000000000; // .2 eth
+        config.fundsRecipient = payable(msg.sender);
     }
 
     function mintRandom(uint256 quantity, bytes32[] calldata merkleProof) external payable nonReentrant {
@@ -433,12 +437,14 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         uint64 startTime,
         uint64 endTime,
         uint256 startPriceInWei,
-        uint256 endPriceInWei
+        uint256 endPriceInWei,
+        address payable fundsRecipient
     ) external onlyOwner {
         config.startTime = startTime;
         config.endTime = endTime;
         config.startPriceInWei = startPriceInWei;
         config.endPriceInWei = endPriceInWei;
+        config.fundsRecipient = fundsRecipient;
     }
 
     function setDescriptor(address _descriptor) external onlyOwner {
@@ -451,7 +457,10 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
 
     function withdraw() external onlyOwner {
         uint256 balance = address(this).balance;
-        (bool success, ) = msg.sender.call{value: balance}("");
+        (bool success, ) = config.fundsRecipient.call{
+            value: balance,
+            gas: FUNDS_SEND_GAS_LIMIT
+        }("");
         require(success, "Transfer failed.");
     }
 

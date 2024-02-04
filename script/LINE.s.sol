@@ -14,7 +14,7 @@ abstract contract Deploy is Script {
 
         line.setInitialAvailableCoordinates(_getMintableCoordinates());
         line.updateConfig(
-            uint64(1704369600), uint64(1704373200), 1000000000000000000, 1000000000000000
+            uint64(1704369600), uint64(1704373200), 1000000000000000000, 1000000000000000, payable(msg.sender)
         );
         vm.stopBroadcast();
     }
@@ -68,7 +68,7 @@ contract ChangeSetup is Script {
         vm.startBroadcast();
         LINE line = LINE(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512);
         line.updateConfig(
-            uint64(block.timestamp) + 60 * 2, uint64(block.timestamp) + 60 * 60, 1000000000000000000, 200000000000000000
+            uint64(block.timestamp) + 60 * 2, uint64(block.timestamp) + 60 * 60, 1000000000000000000, 200000000000000000, payable(msg.sender)
         );
         vm.stopBroadcast();
     }
