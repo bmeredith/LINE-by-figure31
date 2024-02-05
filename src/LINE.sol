@@ -323,7 +323,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         grid[yGridIndex][x] = tokenId;
 
         tokenIdToTokenInfo[tokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
-        tokenIdToTokenInfo[tokenId].hasReachedEnd = ((token.direction == ITokenDescriptor.Direction.UP && y == (NUM_ROWS - 1)) || (token.direction == ITokenDescriptor.Direction.DOWN && y == 1));
+        tokenIdToTokenInfo[tokenId].hasReachedEnd = ((token.direction == ITokenDescriptor.Direction.UP && y == (NUM_ROWS - 2)) || (token.direction == ITokenDescriptor.Direction.DOWN && y == 1));
         tokenIdToTokenInfo[tokenId].numMovements = ++token.numMovements;
         tokenIdToTokenInfo[tokenId].timestamp = block.timestamp;
     }
@@ -476,11 +476,11 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     function _getDiscountedCurrentPrice(bytes32[] calldata merkleProof, address addressToCheck, uint256 currentPrice) private view returns (uint256) {
         bool isHolder = checkMerkleProof(merkleProof, addressToCheck, holdersMerkleRoot);
         bool isFpMember = checkMerkleProof(merkleProof, addressToCheck, fpMembersMerkleRoot);
-
-        if (isFpMember) {
-            currentPrice = (currentPrice * 85) / 100; // 15% off
-        } else if (isHolder) {
+        
+        if (isHolder) {
             currentPrice = (currentPrice * 75) / 100; // 25% off
+        } else if (isFpMember) {
+            currentPrice = (currentPrice * 85) / 100; // 15% off
         }
     }
 
