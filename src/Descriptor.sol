@@ -33,7 +33,7 @@ contract Descriptor is ITokenDescriptor, Constants {
             'https://opensea.io/'
         );
 
-        uint256 currentImageIndex = _determineCurrentPanoramicImage(token);
+        uint256 currentImageIndex = _getCurrentPanoramicImageIndex(token);
         writer = writer.writeStringProperty(
             'image',
             string.concat('https://picsum.photos/id/', Strings.toString(currentImageIndex), '/200/300')
@@ -51,10 +51,10 @@ contract Descriptor is ITokenDescriptor, Constants {
         );
     }
 
-    function _determineCurrentPanoramicImage(Token calldata token) 
+    function _determineCurrentImagePoint(Token calldata token)
         private
         view
-        returns (uint256) 
+        returns (uint256, uint256)
     {
         uint256 numDaysPassed = (block.timestamp - token.timestamp) / 1 days;
         uint256 numPanoramicPoints;
@@ -69,7 +69,7 @@ contract Descriptor is ITokenDescriptor, Constants {
 
         // is at the origin point for the day
         if (panoramicPoint % 2 == 0) {
-            return _calculateImageIndex(token.current.x, token.current.y);            
+            return (token.current.x, token.current.y);            
         }
 
         uint256 x;
@@ -111,7 +111,7 @@ contract Descriptor is ITokenDescriptor, Constants {
                 y = token.current.y - 1;
             }
 
-            return _calculateImageIndex(x, y);
+            return (x,y);
         }
 
         // 1 = look west
@@ -162,6 +162,15 @@ contract Descriptor is ITokenDescriptor, Constants {
             }
         }
 
+        return (x,y);
+    }
+
+    function _getCurrentPanoramicImageIndex(Token calldata token) 
+        private
+        view
+        returns (uint256) 
+    {
+        (uint256 x, uint256 y) = _determineCurrentImagePoint(token);
         return _calculateImageIndex(x, y);
     }
     
@@ -174,17 +183,18 @@ contract Descriptor is ITokenDescriptor, Constants {
         return ((NUM_ROWS - yIndex - 1) * NUM_COLUMNS) + x;
     }
 
-    function _generateAttributes(JsonWriter.Json memory _writer, Token memory token) 
+    function _generateAttributes(JsonWriter.Json memory _writer, Token calldata token) 
         private 
-        pure 
+        view 
         returns (JsonWriter.Json memory writer)
     {
         writer = _writer.writeStartArray('attributes');
 
-        writer = _addStringAttribute(writer, 'Current Coordinate', string.concat(Strings.toString(token.current.x), ',', Strings.toString(token.current.y)));
-        writer = _addStringAttribute(writer, 'Initial Coordinate', string.concat(Strings.toString(token.initial.x), ',', Strings.toString(token.initial.y)));
-        writer = _addStringAttribute(writer, 'Direction', token.direction == Direction.UP ? 'Up' : 'Down');
-        writer = _addStringAttribute(writer, 'Has Reached End', token.hasReachedEnd == true ? 'Yes' : 'No');
+        (uint256 imagePointX, uint256 imagePointY) = _determineCurrentImagePoint(token);
+        writer = _addStringAttribute(writer, 'Origin Point', string.concat(Strings.toString(token.current.x), ',', Strings.toString(token.current.y)));
+        writer = _addStringAttribute(writer, 'Image Point', string.concat(Strings.toString(imagePointX), ',', Strings.toString(imagePointY)));
+        writer = _addStringAttribute(writer, 'Type', token.direction == Direction.UP ? 'Up' : 'Down');
+        writer = _addStringAttribute(writer, 'Starting Point', string.concat(Strings.toString(token.initial.x), ',', Strings.toString(token.initial.y)));
         writer = _addStringAttribute(writer, 'Is Locked', token.isLocked == true ? 'Yes' : 'No');
         writer = _addStringAttribute(writer, 'Number of Movements', Strings.toString(token.numMovements));
 
