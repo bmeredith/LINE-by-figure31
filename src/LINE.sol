@@ -482,6 +482,8 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         } else if (isFpMember) {
             currentPrice = (currentPrice * 85) / 100; // 15% off
         }
+
+        return currentPrice;
     }
 
     function _isPositionOutOfBounds(uint256 x, uint256 y) private pure returns (bool) {
