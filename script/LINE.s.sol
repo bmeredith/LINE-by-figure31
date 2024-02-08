@@ -19,27 +19,28 @@ abstract contract Deploy is Script {
         vm.stopBroadcast();
     }
 
-    uint256[] coordinates;     
-    function _getMintableCoordinates() private returns (uint256[] memory) {   
-        for(uint256 i=601;i < 624;i++) {
+    uint256[] coordinates;
+
+    function _getMintableCoordinates() private returns (uint256[] memory) {
+        for (uint256 i = 601; i < 624; i++) {
             coordinates.push(i);
         }
 
-        for(uint256 i=526;i < 549;i++) {
+        for (uint256 i = 526; i < 549; i++) {
             coordinates.push(i);
         }
 
         return coordinates;
     }
 
-    // function _getMintableCoordinates() private view returns (ITokenDescriptor.Coordinate[] memory) {
-    //     ITokenDescriptor.Coordinate[] memory coordinates = new ITokenDescriptor.Coordinate[](20);
-    //     for (uint256 i = 0; i < 20; i++) {
-    //         uint256 randomX;
-    //         uint256 randomY;
-    //         randomX = uint256(keccak256(abi.encode(block.timestamp, i))) % 24 + 1;
-    //         randomY = uint256(keccak256(abi.encode(block.timestamp, i + 20))) % 24 + 1;
-    //         coordinates[i] = ITokenDescriptor.Coordinate({x: randomX, y: randomY});
+    // function _getMintableCoordinates() private returns (uint256[] memory) {
+    //     uint256 coord;
+    //     for (uint256 i = 0; i < 5; i++) {
+    //         coord = uint256(keccak256(abi.encode(block.timestamp, i))) % 626;
+    //         while (coord % 25 == 0) {
+    //             coord = (coord + 1) % 626;
+    //         }
+    //         coordinates.push(coord);
     //     }
     //     return coordinates;
     // }
@@ -68,7 +69,11 @@ contract ChangeSetup is Script {
         vm.startBroadcast();
         LINE line = LINE(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512);
         line.updateConfig(
-            uint64(block.timestamp) + 60 * 2, uint64(block.timestamp) + 60 * 60, 1000000000000000000, 200000000000000000, payable(msg.sender)
+            uint64(block.timestamp) + 60 * 2,
+            uint64(block.timestamp) + 60 * 60,
+            1000000000000000000,
+            200000000000000000,
+            payable(msg.sender)
         );
         vm.stopBroadcast();
     }
