@@ -62,8 +62,8 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
 
     constructor(address _descriptor) ERC721("LINE", "LINE") Ownable(msg.sender) {
         descriptor = ITokenDescriptor(_descriptor);
-        config.startTime = uint64(1704369600);
-        config.endTime = uint64(1704369600 + 3600);
+        config.startTime = uint64(1708538400);
+        config.endTime = uint64(1708538400 + 3600);
         config.startPriceInWei = 1000000000000000000; // 1 eth
         config.endPriceInWei = 150000000000000000; // .15 eth
         config.fundsRecipient = payable(msg.sender);
