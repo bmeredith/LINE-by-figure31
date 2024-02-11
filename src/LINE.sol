@@ -38,7 +38,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
     
     uint256 public constant MAX_LOCKED_TOKENS = 20;
-    uint256 public constant MAX_MINT_PER_TX = 3;
+    uint256 public constant MAX_MINT_PER_TX = 5;
     uint256 public constant MAX_SUPPLY = 200;
     uint256 internal immutable FUNDS_SEND_GAS_LIMIT = 210_000;
 
@@ -70,6 +70,10 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     function mintRandom(uint256 quantity, bytes32[] calldata merkleProof) external payable nonReentrant {
+        if (block.timestamp < config.startTime || _isMintingClosed) {
+            revert MintingClosed();
+        }
+
         if (quantity > MAX_MINT_PER_TX) {
             revert ExceedsMaxMintPerTransaction();
         }
@@ -87,7 +91,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         uint256 ethToReturn;
         for (uint256 i=0; i < quantity;) {
             ITokenDescriptor.Coordinate memory coordinateToMint = availableCoordinates[0];
-            bool success = _mintWithChecks(coordinateToMint);
+            bool success = _mintWithChecks(coordinateToMint, msg.sender);
             if (!success) {
                 ethToReturn += currentPrice;
             }
@@ -104,6 +108,10 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     function mintAtPosition(ITokenDescriptor.Coordinate[] memory coordinates, bytes32[] calldata merkleProof) external payable nonReentrant {
+        if (block.timestamp < config.startTime || _isMintingClosed) {
+            revert MintingClosed();
+        }
+
         uint256 numCoordinates = coordinates.length;
         if (numCoordinates > MAX_MINT_PER_TX) {
             revert ExceedsMaxMintPerTransaction();
@@ -120,7 +128,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
 
         uint256 ethToReturn;
         for (uint256 i=0; i < numCoordinates;) {
-            bool success = _mintWithChecks(coordinates[i]);
+            bool success = _mintWithChecks(coordinates[i], msg.sender);
             if (!success) {
                 ethToReturn += currentPrice;
             }
@@ -136,11 +144,22 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         }
     }
 
-    function _mintWithChecks(ITokenDescriptor.Coordinate memory coordinate) internal returns (bool) {
-        if (block.timestamp < config.startTime || _isMintingClosed) {
+    function artistMint(address receiver, ITokenDescriptor.Coordinate[] memory coordinates) external onlyOwner {
+        if (_isMintingClosed) {
             revert MintingClosed();
         }
-        
+
+        uint256 numCoordinates = coordinates.length;
+        for (uint256 i=0; i < numCoordinates;) {
+            _mintWithChecks(coordinates[i], receiver);
+
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function _mintWithChecks(ITokenDescriptor.Coordinate memory coordinate, address receiver) internal returns (bool) {        
         uint256 tokenId = currentTokenId;
         uint256 x = coordinate.x;
         uint256 y = coordinate.y;
@@ -174,7 +193,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         
         _totalSupply++;
         _removeFromAvailability(coordinateHashToIndex[hash]);
-        _mint(msg.sender, tokenId);
+        _mint(receiver, tokenId);
 
         return true;
     }
