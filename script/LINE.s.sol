@@ -78,3 +78,15 @@ contract ChangeSetup is Script {
         vm.stopBroadcast();
     }
 }
+
+contract SetMerkleRoots is Script {
+    function run() external {
+        vm.startBroadcast();
+        LINE line = LINE(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512);
+        line.updateMerkleRoots(
+            0x28047ed34121b81cceb2b9f56917953ba4bef2fa9c3ba9936343c6846009a2a8,
+            0xbe3cc57529233275f6526734cde40e0d719022504650320a8908e16d231871db
+        );
+        vm.stopBroadcast();
+    }
+}
