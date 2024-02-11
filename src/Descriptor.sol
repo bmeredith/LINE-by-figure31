@@ -25,18 +25,18 @@ contract Descriptor is ITokenDescriptor, Constants {
 
         writer = writer.writeStringProperty(
             'description',
-            'DESCRIPTION HERE'
+            'LINE is a photographic series of 200 tokens placed within a synthetic landscape. Tokens act like camera lenses, where location also influences perception. The images in LINE are captured using a digital camera combined with ultra-telephoto lenses.'
         );
 
         writer = writer.writeStringProperty(
             'external_url',
-            'https://opensea.io/'
+            'https://line.fingerprintsdao.xyz'
         );
 
         uint256 currentImageIndex = _getCurrentPanoramicImageIndex(token);
         writer = writer.writeStringProperty(
             'image',
-            string.concat('https://picsum.photos/id/', Strings.toString(currentImageIndex), '/200/300')
+            string.concat('ar://Y-05cY1jiKkVn9aCL3Di3sOWfCUZRPLaoASs0LYJOsU/', Strings.toString(currentImageIndex), '.jpg')
         );
 
         writer = _generateAttributes(writer, token);
