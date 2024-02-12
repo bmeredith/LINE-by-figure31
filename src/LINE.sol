@@ -90,8 +90,14 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
 
         uint256 ethToReturn;
         for (uint256 i=0; i < quantity;) {
-            ITokenDescriptor.Coordinate memory coordinateToMint = availableCoordinates[0];
-            bool success = _mintWithChecks(coordinateToMint, msg.sender);
+            bool success;
+            if (availableCoordinates.length == 0) {
+                success = false;
+            } else {
+                ITokenDescriptor.Coordinate memory coordinateToMint = availableCoordinates[0];
+                success = _mintWithChecks(coordinateToMint, msg.sender);
+            }
+            
             if (!success) {
                 ethToReturn += currentPrice;
             }
