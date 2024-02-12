@@ -39,7 +39,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     
     uint256 public constant MAX_LOCKED_TOKENS = 20;
     uint256 public constant MAX_MINT_PER_TX = 5;
-    uint256 public constant MAX_SUPPLY = 200;
+    uint256 public constant MAX_SUPPLY = 250;
     uint256 internal immutable FUNDS_SEND_GAS_LIMIT = 210_000;
 
     bytes32 public holdersMerkleRoot;
@@ -97,7 +97,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
                 ITokenDescriptor.Coordinate memory coordinateToMint = availableCoordinates[0];
                 success = _mintWithChecks(coordinateToMint, msg.sender);
             }
-            
+
             if (!success) {
                 ethToReturn += currentPrice;
             }
