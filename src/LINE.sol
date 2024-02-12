@@ -37,7 +37,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         address payable fundsRecipient;
     }
     
-    uint256 public constant MAX_LOCKED_TOKENS = 20;
+    uint256 public constant MAX_LOCKED_TOKENS = 25;
     uint256 public constant MAX_MINT_PER_TX = 5;
     uint256 public constant MAX_SUPPLY = 250;
     uint256 internal immutable FUNDS_SEND_GAS_LIMIT = 210_000;
