@@ -25,7 +25,7 @@ contract Descriptor is ITokenDescriptor, Constants {
 
         writer = writer.writeStringProperty(
             'description',
-            'LINE is a photographic series of 200 tokens placed within a synthetic landscape. Tokens act like camera lenses, where location also influences perception. The images in LINE are captured using a digital camera combined with ultra-telephoto lenses.'
+            'LINE is a photographic series of 250 tokens placed within a synthetic landscape. Tokens act like camera lenses, where location also influences perception. The images in LINE are captured using a digital camera combined with ultra-telephoto lenses.'
         );
 
         writer = writer.writeStringProperty(

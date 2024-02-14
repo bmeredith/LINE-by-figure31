@@ -37,7 +37,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         address payable fundsRecipient;
     }
     
-    uint256 public constant MAX_LOCKED_TOKENS = 25;
+    uint256 public constant MAX_STAR_TOKENS = 25;
     uint256 public constant MAX_MINT_PER_TX = 5;
     uint256 public constant MAX_SUPPLY = 250;
     uint256 internal immutable FUNDS_SEND_GAS_LIMIT = 210_000;
@@ -46,7 +46,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     bytes32 public fpMembersMerkleRoot;
 
     uint256 public currentTokenId = 1;
-    uint256 public numLockedOriginPoints;
+    uint256 public numStarTokens;
     bool public canMove;
     uint256 private  _totalSupply;
     bool private _isMintingClosed;
@@ -367,7 +367,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert PositionCurrentlyTaken(x,y);
         }
 
-        if (numLockedOriginPoints == MAX_LOCKED_TOKENS) {
+        if (numStarTokens == MAX_STAR_TOKENS) {
             revert MaxLockedOriginPointsAlreadyReached();
         }
 
@@ -386,7 +386,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         tokenIdToTokenInfo[tokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
         tokenIdToTokenInfo[tokenId].timestamp = block.timestamp;
         tokenIdToTokenInfo[tokenId].isLocked = true;
-        numLockedOriginPoints++;
+        numStarTokens++;
     }
 
     function getAvailableCoordinates() external view returns (ITokenDescriptor.Coordinate[] memory) {
