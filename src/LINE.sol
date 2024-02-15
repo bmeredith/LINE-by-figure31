@@ -334,12 +334,12 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         } else if (yDelta == 1) {
             y--;
         }
-        uint256 yGridIndex = _calculateYGridIndex(y);
 
-        if (_isPositionOutOfBounds(x, y)) {
+        if (!_isPositionWithinBounds(x, y, token.direction)) {
             revert PositionOutOfBounds(x,y);
         }
 
+        uint256 yGridIndex = _calculateYGridIndex(y);
         if (grid[yGridIndex][x] > 0) {
             revert PositionCurrentlyTaken(x,y);
         }
@@ -358,7 +358,8 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert NotTokenOwner();
         }
 
-        if (_isPositionOutOfBounds(x, y)) {
+        ITokenDescriptor.Token memory token = tokenIdToTokenInfo[tokenId];
+        if (!_isPositionWithinBounds(x, y, token.direction)) {
             revert PositionOutOfBounds(x,y);
         }
 
@@ -371,7 +372,6 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert MaxLockedOriginPointsAlreadyReached();
         }
 
-        ITokenDescriptor.Token memory token = tokenIdToTokenInfo[tokenId];
         if (!token.hasReachedEnd) {
             revert HasNotReachedEnd();
         }
@@ -511,8 +511,16 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         return currentPrice;
     }
 
-    function _isPositionOutOfBounds(uint256 x, uint256 y) private pure returns (bool) {
-        return x < 1 || x >= NUM_COLUMNS - 1 || y < 1 || y >= NUM_ROWS - 1;
+    function _isPositionWithinBounds(uint256 x, uint256 y, ITokenDescriptor.Direction tokenDirection) private pure returns (bool) {
+        if (x < 1 || x >= NUM_COLUMNS - 1) {
+            return false;
+        }
+
+        if (tokenDirection == ITokenDescriptor.Direction.DOWN) {
+            return y > 0;
+        } else {
+            return y < NUM_ROWS - 1;
+        }
     }
 
     function _removeFromAvailability(uint256 index) private {
