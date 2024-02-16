@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+/// @title LINE
+///
+/// @author figure31.eth
+/// @author wilt.eth
 import {Constants} from "./Constants.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {Descriptor} from "./Descriptor.sol";
@@ -11,42 +15,90 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
+/// @dev Thrown when too many tokens are attempted to be minted within a single transaction.
 error ExceedsMaxMintPerTransaction();
+
+/// @dev Thrown when a token has not yet reached the end of the grid.
 error HasNotReachedEnd();
+
+/// @dev Thrown when the eth passed to purchase a token is incorrect.
 error IncorrectPrice();
+
+/// @dev Thrown when attempting to move in a direction opposite of the token's designated direction.
 error InvalidDirection();
-error MaxLockedOriginPointsAlreadyReached();
+
+/// @dev Thrown when the max number of star tokens has already occurred.
+error MaxStarTokensReached();
+
+/// @dev Thrown when attempting to mint a token after minting has closed.
 error MintingClosed();
+
+/// @dev Thrown when attempting to move a token and the ability to move tokens has not started yet.
 error MovementLocked();
+
+/// @dev Thrown when checking the owner or approved address for a non-existent NFT.
 error NotMinted();
+
+/// @dev Thrown when checking that the caller is not the owner of the NFT.
 error NotTokenOwner();
+
+/// @dev Thrown when attempting to move a token that is already locked and is a star token.
 error OriginPointLocked();
+
+/// @dev Thrown when attempting to move a token to a place on the grid that is already taken.
 error PositionCurrentlyTaken(uint256 x, uint256 y);
+
+/// @dev Thrown when attempting to mint a token to a place on the grid that was not marked to be minted from.
 error PositionNotMintable(uint256 x, uint256 y);
+
+/// @dev Thrown when attempting to move a token to a place that is outside the bounds of the grid.
 error PositionOutOfBounds(uint256 x, uint256 y);
 
 contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
 
     using SafeTransferLib for address payable;
 
+    /// @dev Struct containing the details of the Dutch auction
     struct SalesConfig {
+        // start time of the auction
         uint64 startTime;
+
+        // end time of the auction
         uint64 endTime;
+        
+        // initial price of the Dutch auction
         uint256 startPriceInWei;
+
+        // resting price of the Dutch auction
         uint256 endPriceInWei;
+
+        // recepient of the funds from the Dutch auction
         address payable fundsRecipient;
     }
-    
+
+    /// @dev The maximum allowed number of star tokens.
     uint256 public constant MAX_STAR_TOKENS = 25;
+
+    /// @dev The maximum allowed number of tokens to be minted within a single transaction.
     uint256 public constant MAX_MINT_PER_TX = 5;
+    
+    /// @dev The maximum number of tokens to be minted.
     uint256 public constant MAX_SUPPLY = 250;
     uint256 internal immutable FUNDS_SEND_GAS_LIMIT = 210_000;
 
+    /// @dev The merkle root for collectors/holders.
     bytes32 public holdersMerkleRoot;
+
+    /// @dev The merkle root for members of FingerprintsDAO.
     bytes32 public fpMembersMerkleRoot;
 
+    /// @dev Keeps track of the current token id.
     uint256 public currentTokenId = 1;
+    
+    /// @dev Keeps track of the number of tokens that have become star tokens.
     uint256 public numStarTokens;
+    
+    /// @dev The flag to determine if tokens have the ability to move.
     bool public canMove;
     bool private _isMintingClosed;
     uint256 private  _totalSupply;
@@ -69,6 +121,8 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         config.fundsRecipient = payable(msg.sender);
     }
 
+    
+    /// @dev The flag to determine if tokens have the ability to move.
     function mintRandom(uint256 quantity, bytes32[] calldata merkleProof) external payable nonReentrant {
         if (block.timestamp < config.startTime || _isMintingClosed) {
             revert MintingClosed();
@@ -165,10 +219,12 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         }
     }
 
+    /// @dev Ends the ability to mint.
     function closeMint() external onlyOwner {
         _closeMint();
     }
 
+    /// @dev Moves a token one spot to the north on the cartesian grid.
     function moveNorth(uint256 tokenId) external {
         if (tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.UP) {
             revert InvalidDirection();
@@ -177,6 +233,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         _move(tokenId, 0, -1);
     }
 
+    /// @dev Moves a token one spot to the northwest on the cartesian grid.
     function moveNorthwest(uint256 tokenId) external {
         if (tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.UP) {
             revert InvalidDirection();
@@ -185,6 +242,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         _move(tokenId, -1, -1);
     }
 
+    /// @dev Moves a token one spot to the northeast on the cartesian grid.
     function moveNortheast(uint256 tokenId) external {
         if (tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.UP) {
             revert InvalidDirection();
@@ -193,6 +251,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         _move(tokenId, 1, -1);
     }
 
+    /// @dev Moves a token one spot to the south on the cartesian grid.
     function moveSouth(uint256 tokenId) external {
         if (tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.DOWN) {
             revert InvalidDirection();
@@ -201,6 +260,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         _move(tokenId, 0, 1);
     }
 
+    /// @dev Moves a token one spot to the southwest on the cartesian grid.
     function moveSouthwest(uint256 tokenId) external {
         if (tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.DOWN) {
             revert InvalidDirection();
@@ -209,6 +269,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         _move(tokenId, -1, 1);
     }
 
+    /// @dev Moves a token one spot to the southeast on the cartesian grid.
     function moveSoutheast(uint256 tokenId) external {
         if (tokenIdToTokenInfo[tokenId].direction != ITokenDescriptor.Direction.DOWN) {
             revert InvalidDirection();
@@ -217,14 +278,17 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         _move(tokenId, 1, 1);
     }
 
+    /// @dev Moves a token one spot to the west on the cartesian grid.
     function moveWest(uint256 tokenId) external {
         _move(tokenId, -1, 0);
     }
 
+    /// @dev Moves a token one spot to the east on the cartesian grid.
     function moveEast(uint256 tokenId) external {
         _move(tokenId, 1, 0);
     }
 
+    /// @dev Converts a token to be a star token and locks their token at the given position.
     function lockOriginPoint(uint256 tokenId, uint256 x, uint256 y) external {
         if (msg.sender != ownerOf(tokenId)) {
             revert NotTokenOwner();
@@ -241,7 +305,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         }
 
         if (numStarTokens == MAX_STAR_TOKENS) {
-            revert MaxLockedOriginPointsAlreadyReached();
+            revert MaxStarTokensReached();
         }
 
         if (!token.hasReachedEnd) {
@@ -261,12 +325,10 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         numStarTokens++;
     }
 
-    function setInitialAvailableCoordinates(uint256[] calldata positions) external onlyOwner {
+    /// @dev Sets the coordinates that are available to minted.
+    function setInitialAvailableCoordinates(ITokenDescriptor.Coordinate[] calldata positions) external onlyOwner {
         for (uint256 i = 0; i < positions.length; i++) {
-            uint256 position = positions[i];
-            uint256 x = position % NUM_COLUMNS;
-            uint256 y = (position - x) / NUM_ROWS;
-            ITokenDescriptor.Coordinate memory coordinate = ITokenDescriptor.Coordinate({x: x, y: y});
+            ITokenDescriptor.Coordinate memory coordinate = ITokenDescriptor.Coordinate({x: positions[i].x, y: positions[i].y});
 
             bytes32 hash = _getCoordinateHash(coordinate);
             _mintableCoordinates[hash] = true;
@@ -275,6 +337,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         }
     }
 
+    /// @dev Updates the details of the Dutch auction.
     function updateConfig(
         uint64 startTime,
         uint64 endTime,
@@ -289,15 +352,18 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         config.fundsRecipient = fundsRecipient;
     }
 
+    /// @dev Sets the address of the descriptor.
     function setDescriptor(address _descriptor) external onlyOwner {
         descriptor = ITokenDescriptor(_descriptor);
     }
 
-    function updateMerkleRoots(bytes32 _holderRoot, bytes32 _fpMembersRoot) external onlyOwner {
-        holdersMerkleRoot = _holderRoot;
+    /// @dev Updates the merkle roots
+    function updateMerkleRoots(bytes32 _holdersRoot, bytes32 _fpMembersRoot) external onlyOwner {
+        holdersMerkleRoot = _holdersRoot;
         fpMembersMerkleRoot = _fpMembersRoot;
     }
 
+    /// @dev Withdraws the eth from the contract to the set funds receipient.
     function withdraw() external onlyOwner {
         uint256 balance = address(this).balance;
         (bool success, ) = config.fundsRecipient.call{
@@ -307,18 +373,22 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         require(success, "Transfer failed.");
     }
 
+    /// @dev Returns the available coordinates that are still available for mint.
     function getAvailableCoordinates() external view returns (ITokenDescriptor.Coordinate[] memory) {
         return _availableCoordinates;
     }
 
+    /// @dev Returns the cartesian grid of where tokens are placed at within the grid.
     function getGrid() external view returns (uint256[NUM_COLUMNS][NUM_ROWS] memory) {
         return _grid;
     }
 
+    /// @dev Returns the details of a token.
     function getToken(uint256 tokenId) external view returns (ITokenDescriptor.Token memory) {
         return tokenIdToTokenInfo[tokenId];
     }
 
+    /// @dev Returns the details of all tokens.
     function getTokens() external view returns (ITokenDescriptor.Token[] memory) {
         ITokenDescriptor.Token[] memory tokens = new ITokenDescriptor.Token[](_totalSupply);
 
@@ -333,6 +403,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         return tokens;
     }
     
+    /// @dev Returns if a wallet address/proof is part of the given merkle root.
     function checkMerkleProof(
         bytes32[] calldata merkleProof,
         address _address,
@@ -342,6 +413,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         return MerkleProof.verify(merkleProof, _root, leaf);
     }
 
+    /// @dev Returns the current price of the Dutch auction.
     function getCurrentPrice() public view returns (uint256) {      
         uint256 duration = config.endTime - config.startTime;
         uint256 halflife = 950; // adjust this to adjust speed of decay
@@ -371,6 +443,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         return (decayedPrice / 1000000000000000) * 1000000000000000;
     }
 
+    /// @dev Returns the token ids that a wallet has ownership of.
     function tokensOfOwner(address _owner) public view returns (uint256[] memory) {
         uint256 balance = balanceOf(_owner);
         uint256[] memory tokens = new uint256[](balance);
@@ -387,6 +460,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         return tokens;
     }
 
+    /// @dev Returns the tokenURI of the given token id.
     function tokenURI(uint256 id) public view virtual override returns (string memory) {
         if (ownerOf(id) == address(0)) {
             revert NotMinted();
@@ -396,6 +470,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         return descriptor.generateMetadata(id, token);
     }
 
+    /// @dev Returns the total supply.
     function totalSupply() public view returns (uint256) {
         return _totalSupply;
     }
