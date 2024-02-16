@@ -120,9 +120,8 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         config.endPriceInWei = 150000000000000000; // .15 eth
         config.fundsRecipient = payable(msg.sender);
     }
-
     
-    /// @dev The flag to determine if tokens have the ability to move.
+    /// @dev Mints a token at a random position on the grid.
     function mintRandom(uint256 quantity, bytes32[] calldata merkleProof) external payable nonReentrant {
         if (block.timestamp < config.startTime || _isMintingClosed) {
             revert MintingClosed();
@@ -167,6 +166,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         }
     }
 
+    /// @dev Mints a token at the specified on the grid.
     function mintAtPosition(ITokenDescriptor.Coordinate[] memory coordinates, bytes32[] calldata merkleProof) external payable nonReentrant {
         if (block.timestamp < config.startTime || _isMintingClosed) {
             revert MintingClosed();
