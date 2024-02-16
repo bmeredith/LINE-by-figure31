@@ -48,17 +48,17 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     uint256 public currentTokenId = 1;
     uint256 public numStarTokens;
     bool public canMove;
-    uint256 private  _totalSupply;
     bool private _isMintingClosed;
+    uint256 private  _totalSupply;
 
     ITokenDescriptor public descriptor;
     SalesConfig public config;
 
-    ITokenDescriptor.Coordinate[] public availableCoordinates;
-    uint256[NUM_COLUMNS][NUM_ROWS] public grid;
-    mapping(bytes32 => bool) public mintableCoordinates;
+    uint256[NUM_COLUMNS][NUM_ROWS] internal _grid;
+    ITokenDescriptor.Coordinate[] internal _availableCoordinates;
+    mapping(bytes32 => uint256) internal _coordinateHashToIndex;
+    mapping(bytes32 => bool) internal _mintableCoordinates;
     mapping(uint256 => ITokenDescriptor.Token) public tokenIdToTokenInfo;
-    mapping(bytes32 => uint256) public coordinateHashToIndex;
 
     constructor(address _descriptor) ERC721("LINE", "LINE") Ownable(msg.sender) {
         descriptor = ITokenDescriptor(_descriptor);
@@ -91,10 +91,10 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         uint256 ethToReturn;
         for (uint256 i=0; i < quantity;) {
             bool success;
-            if (availableCoordinates.length == 0) {
+            if (_availableCoordinates.length == 0) {
                 success = false;
             } else {
-                ITokenDescriptor.Coordinate memory coordinateToMint = availableCoordinates[0];
+                ITokenDescriptor.Coordinate memory coordinateToMint = _availableCoordinates[0];
                 success = _mintWithChecks(coordinateToMint, msg.sender);
             }
 
@@ -165,90 +165,8 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         }
     }
 
-    function _mintWithChecks(ITokenDescriptor.Coordinate memory coordinate, address receiver) internal returns (bool) {        
-        uint256 tokenId = currentTokenId;
-        uint256 x = coordinate.x;
-        uint256 y = coordinate.y;
-        uint256 yIndex = _calculateYGridIndex(y); 
-
-        if (grid[yIndex][x] > 0) {
-            return false;
-        }
-
-        bytes32 hash = _getCoordinateHash(ITokenDescriptor.Coordinate({x: x, y: y}));
-        if (!mintableCoordinates[hash]) {
-            revert PositionNotMintable(x, y);
-        }
-
-        grid[yIndex][x] = tokenId;
-        tokenIdToTokenInfo[tokenId] = ITokenDescriptor.Token({
-            initial: ITokenDescriptor.Coordinate({x: x, y: y}),
-            current: ITokenDescriptor.Coordinate({x: x, y: y}),
-            timestamp: block.timestamp,
-            hasReachedEnd: false,
-            isLocked: false,
-            direction: y >= 12 ? ITokenDescriptor.Direction.DOWN : ITokenDescriptor.Direction.UP,
-            numMovements: 0
-        });
-
-        if (tokenId != MAX_SUPPLY) {
-            currentTokenId++;
-        } else {
-            _closeMint();
-        }
-        
-        _totalSupply++;
-        _removeFromAvailability(coordinateHashToIndex[hash]);
-        _mint(receiver, tokenId);
-
-        return true;
-    }
-
-    function getCurrentPrice() public view returns (uint256) {      
-        uint256 duration = config.endTime - config.startTime;
-        uint256 halflife = 950; // adjust this to adjust speed of decay
-
-        if (block.timestamp < config.startTime) {
-            return config.startPriceInWei;
-        }
-
-        uint256 elapsedTime = ((block.timestamp - config.startTime) / 10 ) * 10;  
-        if (elapsedTime >= duration) {
-            return config.endPriceInWei;
-        }
-
-        // h/t artblocks for exponential decaying price math
-        uint256 decayedPrice = config.startPriceInWei;
-        // Divide by two (via bit-shifting) for the number of entirely completed
-        // half-lives that have elapsed since auction start time.
-        decayedPrice >>= elapsedTime / halflife;
-        // Perform a linear interpolation between partial half-life points, to
-        // approximate the current place on a perfect exponential decay curve.
-        decayedPrice -= (decayedPrice * (elapsedTime % halflife)) / halflife / 2;
-        if (decayedPrice < config.endPriceInWei) {
-            // Price may not decay below stay `basePrice`.
-            return config.endPriceInWei;
-        }
-        
-        return (decayedPrice / 1000000000000000) * 1000000000000000;
-    }
-
-    function getGrid() external view returns (uint256[NUM_COLUMNS][NUM_ROWS] memory) {
-        return grid;
-    }
-
-    function getTokens() external view returns (ITokenDescriptor.Token[] memory) {
-        ITokenDescriptor.Token[] memory tokens = new ITokenDescriptor.Token[](_totalSupply);
-
-        for(uint256 i=0;i < _totalSupply;) {
-            tokens[i] = tokenIdToTokenInfo[i+1];
-
-            unchecked {
-                ++i;
-            }
-        }
-
-        return tokens;
+    function closeMint() external onlyOwner {
+        _closeMint();
     }
 
     function moveNorth(uint256 tokenId) external {
@@ -307,6 +225,220 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         _move(tokenId, 1, 0);
     }
 
+    function lockOriginPoint(uint256 tokenId, uint256 x, uint256 y) external {
+        if (msg.sender != ownerOf(tokenId)) {
+            revert NotTokenOwner();
+        }
+
+        ITokenDescriptor.Token memory token = tokenIdToTokenInfo[tokenId];
+        if (!_isPositionWithinBounds(x, y, token.direction)) {
+            revert PositionOutOfBounds(x,y);
+        }
+
+        uint256 yGridIndex = _calculateYGridIndex(y);
+        if (_grid[yGridIndex][x] > 0) {
+            revert PositionCurrentlyTaken(x,y);
+        }
+
+        if (numStarTokens == MAX_STAR_TOKENS) {
+            revert MaxLockedOriginPointsAlreadyReached();
+        }
+
+        if (!token.hasReachedEnd) {
+            revert HasNotReachedEnd();
+        }
+        
+        if (token.isLocked) {
+            revert OriginPointLocked();
+        }
+
+        _grid[_calculateYGridIndex(token.current.y)][token.current.x] = 0;
+        _grid[yGridIndex][x] = tokenId;
+
+        tokenIdToTokenInfo[tokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
+        tokenIdToTokenInfo[tokenId].timestamp = block.timestamp;
+        tokenIdToTokenInfo[tokenId].isLocked = true;
+        numStarTokens++;
+    }
+
+    function setInitialAvailableCoordinates(uint256[] calldata positions) external onlyOwner {
+        for (uint256 i = 0; i < positions.length; i++) {
+            uint256 position = positions[i];
+            uint256 x = position % NUM_COLUMNS;
+            uint256 y = (position - x) / NUM_ROWS;
+            ITokenDescriptor.Coordinate memory coordinate = ITokenDescriptor.Coordinate({x: x, y: y});
+
+            bytes32 hash = _getCoordinateHash(coordinate);
+            _mintableCoordinates[hash] = true;
+            _coordinateHashToIndex[hash] = i;
+            _availableCoordinates.push(coordinate);
+        }
+    }
+
+    function updateConfig(
+        uint64 startTime,
+        uint64 endTime,
+        uint256 startPriceInWei,
+        uint256 endPriceInWei,
+        address payable fundsRecipient
+    ) external onlyOwner {
+        config.startTime = startTime;
+        config.endTime = endTime;
+        config.startPriceInWei = startPriceInWei;
+        config.endPriceInWei = endPriceInWei;
+        config.fundsRecipient = fundsRecipient;
+    }
+
+    function setDescriptor(address _descriptor) external onlyOwner {
+        descriptor = ITokenDescriptor(_descriptor);
+    }
+
+    function updateMerkleRoots(bytes32 _holderRoot, bytes32 _fpMembersRoot) external onlyOwner {
+        holdersMerkleRoot = _holderRoot;
+        fpMembersMerkleRoot = _fpMembersRoot;
+    }
+
+    function withdraw() external onlyOwner {
+        uint256 balance = address(this).balance;
+        (bool success, ) = config.fundsRecipient.call{
+            value: balance,
+            gas: FUNDS_SEND_GAS_LIMIT
+        }("");
+        require(success, "Transfer failed.");
+    }
+
+    function getAvailableCoordinates() external view returns (ITokenDescriptor.Coordinate[] memory) {
+        return _availableCoordinates;
+    }
+
+    function getGrid() external view returns (uint256[NUM_COLUMNS][NUM_ROWS] memory) {
+        return _grid;
+    }
+
+    function getToken(uint256 tokenId) external view returns (ITokenDescriptor.Token memory) {
+        return tokenIdToTokenInfo[tokenId];
+    }
+
+    function getTokens() external view returns (ITokenDescriptor.Token[] memory) {
+        ITokenDescriptor.Token[] memory tokens = new ITokenDescriptor.Token[](_totalSupply);
+
+        for(uint256 i=0;i < _totalSupply;) {
+            tokens[i] = tokenIdToTokenInfo[i+1];
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        return tokens;
+    }
+    
+    function checkMerkleProof(
+        bytes32[] calldata merkleProof,
+        address _address,
+        bytes32 _root
+    ) public pure returns (bool) {
+        bytes32 leaf = keccak256(abi.encodePacked(_address));
+        return MerkleProof.verify(merkleProof, _root, leaf);
+    }
+
+    function getCurrentPrice() public view returns (uint256) {      
+        uint256 duration = config.endTime - config.startTime;
+        uint256 halflife = 950; // adjust this to adjust speed of decay
+
+        if (block.timestamp < config.startTime) {
+            return config.startPriceInWei;
+        }
+
+        uint256 elapsedTime = ((block.timestamp - config.startTime) / 10 ) * 10;  
+        if (elapsedTime >= duration) {
+            return config.endPriceInWei;
+        }
+
+        // h/t artblocks for exponential decaying price math
+        uint256 decayedPrice = config.startPriceInWei;
+        // Divide by two (via bit-shifting) for the number of entirely completed
+        // half-lives that have elapsed since auction start time.
+        decayedPrice >>= elapsedTime / halflife;
+        // Perform a linear interpolation between partial half-life points, to
+        // approximate the current place on a perfect exponential decay curve.
+        decayedPrice -= (decayedPrice * (elapsedTime % halflife)) / halflife / 2;
+        if (decayedPrice < config.endPriceInWei) {
+            // Price may not decay below stay `basePrice`.
+            return config.endPriceInWei;
+        }
+        
+        return (decayedPrice / 1000000000000000) * 1000000000000000;
+    }
+
+    function tokensOfOwner(address _owner) public view returns (uint256[] memory) {
+        uint256 balance = balanceOf(_owner);
+        uint256[] memory tokens = new uint256[](balance);
+        uint256 index;
+        unchecked {
+            for (uint256 i=1; i <= _totalSupply; i++) {
+                if (ownerOf(i) == _owner) {
+                    tokens[index] = i;
+                    index++;
+                }
+            }
+        }
+        
+        return tokens;
+    }
+
+    function tokenURI(uint256 id) public view virtual override returns (string memory) {
+        if (ownerOf(id) == address(0)) {
+            revert NotMinted();
+        }
+
+        ITokenDescriptor.Token memory token = tokenIdToTokenInfo[id];
+        return descriptor.generateMetadata(id, token);
+    }
+
+    function totalSupply() public view returns (uint256) {
+        return _totalSupply;
+    }
+
+    function _mintWithChecks(ITokenDescriptor.Coordinate memory coordinate, address receiver) internal returns (bool) {        
+        uint256 tokenId = currentTokenId;
+        uint256 x = coordinate.x;
+        uint256 y = coordinate.y;
+        uint256 yIndex = _calculateYGridIndex(y); 
+
+        if (_grid[yIndex][x] > 0) {
+            return false;
+        }
+
+        bytes32 hash = _getCoordinateHash(ITokenDescriptor.Coordinate({x: x, y: y}));
+        if (!_mintableCoordinates[hash]) {
+            revert PositionNotMintable(x, y);
+        }
+
+        _grid[yIndex][x] = tokenId;
+        tokenIdToTokenInfo[tokenId] = ITokenDescriptor.Token({
+            initial: ITokenDescriptor.Coordinate({x: x, y: y}),
+            current: ITokenDescriptor.Coordinate({x: x, y: y}),
+            timestamp: block.timestamp,
+            hasReachedEnd: false,
+            isLocked: false,
+            direction: y >= 12 ? ITokenDescriptor.Direction.DOWN : ITokenDescriptor.Direction.UP,
+            numMovements: 0
+        });
+
+        if (tokenId != MAX_SUPPLY) {
+            currentTokenId++;
+        } else {
+            _closeMint();
+        }
+        
+        _totalSupply++;
+        _removeFromAvailability(_coordinateHashToIndex[hash]);
+        _mint(receiver, tokenId);
+
+        return true;
+    }
+
     function _move(uint256 tokenId, int256 xDelta, int256 yDelta) private {
         if (msg.sender != ownerOf(tokenId)) {
             revert NotTokenOwner();
@@ -340,149 +472,17 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         }
 
         uint256 yGridIndex = _calculateYGridIndex(y);
-        if (grid[yGridIndex][x] > 0) {
+        if (_grid[yGridIndex][x] > 0) {
             revert PositionCurrentlyTaken(x,y);
         }
 
-        grid[_calculateYGridIndex(token.current.y)][token.current.x] = 0;
-        grid[yGridIndex][x] = tokenId;
+        _grid[_calculateYGridIndex(token.current.y)][token.current.x] = 0;
+        _grid[yGridIndex][x] = tokenId;
 
         tokenIdToTokenInfo[tokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
         tokenIdToTokenInfo[tokenId].hasReachedEnd = ((token.direction == ITokenDescriptor.Direction.UP && y == (NUM_ROWS - 2)) || (token.direction == ITokenDescriptor.Direction.DOWN && y == 1));
         tokenIdToTokenInfo[tokenId].numMovements = ++token.numMovements;
         tokenIdToTokenInfo[tokenId].timestamp = block.timestamp;
-    }
-
-    function lockOriginPoint(uint256 tokenId, uint256 x, uint256 y) external {
-        if (msg.sender != ownerOf(tokenId)) {
-            revert NotTokenOwner();
-        }
-
-        ITokenDescriptor.Token memory token = tokenIdToTokenInfo[tokenId];
-        if (!_isPositionWithinBounds(x, y, token.direction)) {
-            revert PositionOutOfBounds(x,y);
-        }
-
-        uint256 yGridIndex = _calculateYGridIndex(y);
-        if (grid[yGridIndex][x] > 0) {
-            revert PositionCurrentlyTaken(x,y);
-        }
-
-        if (numStarTokens == MAX_STAR_TOKENS) {
-            revert MaxLockedOriginPointsAlreadyReached();
-        }
-
-        if (!token.hasReachedEnd) {
-            revert HasNotReachedEnd();
-        }
-        
-        if (token.isLocked) {
-            revert OriginPointLocked();
-        }
-
-        grid[_calculateYGridIndex(token.current.y)][token.current.x] = 0;
-        grid[yGridIndex][x] = tokenId;
-
-        tokenIdToTokenInfo[tokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
-        tokenIdToTokenInfo[tokenId].timestamp = block.timestamp;
-        tokenIdToTokenInfo[tokenId].isLocked = true;
-        numStarTokens++;
-    }
-
-    function getAvailableCoordinates() external view returns (ITokenDescriptor.Coordinate[] memory) {
-        return availableCoordinates;
-    }
-
-    function setInitialAvailableCoordinates(uint256[] calldata positions) external onlyOwner {
-        for (uint256 i = 0; i < positions.length; i++) {
-            uint256 position = positions[i];
-            uint256 x = position % NUM_COLUMNS;
-            uint256 y = (position - x) / NUM_ROWS;
-            ITokenDescriptor.Coordinate memory coordinate = ITokenDescriptor.Coordinate({x: x, y: y});
-
-            bytes32 hash = _getCoordinateHash(coordinate);
-            mintableCoordinates[hash] = true;
-            coordinateHashToIndex[hash] = i;
-            availableCoordinates.push(coordinate);
-        }
-    }
-
-    function closeMint() external onlyOwner {
-        _closeMint();
-    }
-    
-    function checkMerkleProof(
-        bytes32[] calldata merkleProof,
-        address _address,
-        bytes32 _root
-    ) public pure returns (bool) {
-        bytes32 leaf = keccak256(abi.encodePacked(_address));
-        return MerkleProof.verify(merkleProof, _root, leaf);
-    }
-
-    function getToken(uint256 tokenId) public view returns (ITokenDescriptor.Token memory) {
-        return tokenIdToTokenInfo[tokenId];
-    }
-
-    function tokensOfOwner(address _owner) public view returns (uint256[] memory) {
-        uint256 balance = balanceOf(_owner);
-        uint256[] memory tokens = new uint256[](balance);
-        uint256 index;
-        unchecked {
-            for (uint256 i=1; i <= _totalSupply; i++) {
-                if (ownerOf(i) == _owner) {
-                    tokens[index] = i;
-                    index++;
-                }
-            }
-        }
-        
-        return tokens;
-    }
-
-    function tokenURI(uint256 id) public view virtual override returns (string memory) {
-        if (ownerOf(id) == address(0)) {
-            revert NotMinted();
-        }
-
-        ITokenDescriptor.Token memory token = tokenIdToTokenInfo[id];
-        return descriptor.generateMetadata(id, token);
-    }
-
-    function totalSupply() public view returns (uint256) {
-        return _totalSupply;
-    }
-
-    function updateConfig(
-        uint64 startTime,
-        uint64 endTime,
-        uint256 startPriceInWei,
-        uint256 endPriceInWei,
-        address payable fundsRecipient
-    ) external onlyOwner {
-        config.startTime = startTime;
-        config.endTime = endTime;
-        config.startPriceInWei = startPriceInWei;
-        config.endPriceInWei = endPriceInWei;
-        config.fundsRecipient = fundsRecipient;
-    }
-
-    function setDescriptor(address _descriptor) external onlyOwner {
-        descriptor = ITokenDescriptor(_descriptor);
-    }
-
-    function updateMerkleRoots(bytes32 _holderRoot, bytes32 _fpMembersRoot) external onlyOwner {
-        holdersMerkleRoot = _holderRoot;
-        fpMembersMerkleRoot = _fpMembersRoot;
-    }
-
-    function withdraw() external onlyOwner {
-        uint256 balance = address(this).balance;
-        (bool success, ) = config.fundsRecipient.call{
-            value: balance,
-            gas: FUNDS_SEND_GAS_LIMIT
-        }("");
-        require(success, "Transfer failed.");
     }
 
     function _closeMint() private {
@@ -524,13 +524,13 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     function _removeFromAvailability(uint256 index) private {
-        uint256 lastCoordinateIndex = availableCoordinates.length - 1;
-        ITokenDescriptor.Coordinate memory lastCoordinate = availableCoordinates[lastCoordinateIndex];
-        ITokenDescriptor.Coordinate memory coordinateToBeRemoved = availableCoordinates[index];
+        uint256 lastCoordinateIndex = _availableCoordinates.length - 1;
+        ITokenDescriptor.Coordinate memory lastCoordinate = _availableCoordinates[lastCoordinateIndex];
+        ITokenDescriptor.Coordinate memory coordinateToBeRemoved = _availableCoordinates[index];
 
-        availableCoordinates[index] = lastCoordinate;
-        coordinateHashToIndex[_getCoordinateHash(lastCoordinate)] = index;
-        delete coordinateHashToIndex[_getCoordinateHash(coordinateToBeRemoved)];
-        availableCoordinates.pop();
+        _availableCoordinates[index] = lastCoordinate;
+        _coordinateHashToIndex[_getCoordinateHash(lastCoordinate)] = index;
+        delete _coordinateHashToIndex[_getCoordinateHash(coordinateToBeRemoved)];
+        _availableCoordinates.pop();
     }
 }
