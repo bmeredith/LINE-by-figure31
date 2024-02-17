@@ -275,18 +275,6 @@ abstract contract Deploy is Script {
 
         return coordinates;
     }
-
-    // function _getMintableCoordinates() private returns (uint256[] memory) {
-    //     uint256 coord;
-    //     for (uint256 i = 0; i < 5; i++) {
-    //         coord = uint256(keccak256(abi.encode(block.timestamp, i))) % 626;
-    //         while (coord % 25 == 0) {
-    //             coord = (coord + 1) % 626;
-    //         }
-    //         coordinates.push(coord);
-    //     }
-    //     return coordinates;
-    // }
 }
 
 contract DeployMainnet is Deploy {
