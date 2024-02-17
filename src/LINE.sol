@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-/// @title LINE
+/// @title LINE by Figure31
+/// @notice LINE is a photographic series of 250 tokens placed within a synthetic landscape. 
+/// Using photographic and post-production techniques similar to Figure31's SALT, the images in 
+/// LINE are captured using a digital camera combined with ultra-telephoto lenses. All photographs 
+/// are taken in remote empty landscapes at sundown or night. There is no artificial light, only 
+/// indirect natural light hitting the camera sensor. Photographs are arranged as panoramas 
+/// to recreate a unified landscape.
 ///
-/// @author figure31.eth
 /// @author wilt.eth
 import {Constants} from "./Constants.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
