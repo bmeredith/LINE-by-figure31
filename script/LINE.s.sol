@@ -14,20 +14,28 @@ abstract contract Deploy is Script {
 
         line.setInitialAvailableCoordinates(_getMintableCoordinates());
         line.updateConfig(
-            uint64(1704369600), uint64(1704373200), 1000000000000000000, 1000000000000000, payable(msg.sender)
+            uint64(1708198200), uint64(1708201800), 1000000000000000000, 1000000000000000, payable(msg.sender)
         );
         vm.stopBroadcast();
     }
 
-    uint256[] coordinates;
+    ITokenDescriptor.Coordinate[] coordinates;
 
-    function _getMintableCoordinates() private returns (uint256[] memory) {
-        for (uint256 i = 601; i < 624; i++) {
-            coordinates.push(i);
+    function _getMintableCoordinates() private returns (ITokenDescriptor.Coordinate[] memory) {
+        for (uint256 i = 1; i < 24; i++) {
+            coordinates.push(ITokenDescriptor.Coordinate({x: i, y: 24}));
         }
 
-        for (uint256 i = 526; i < 549; i++) {
-            coordinates.push(i);
+        for (uint256 i = 1; i < 24; i++) {
+            coordinates.push(ITokenDescriptor.Coordinate({x: i, y: 22}));
+        }
+
+        for (uint256 i = 1; i < 24; i++) {
+            coordinates.push(ITokenDescriptor.Coordinate({x: i, y: 0}));
+        }
+
+        for (uint256 i = 1; i < 24; i++) {
+            coordinates.push(ITokenDescriptor.Coordinate({x: i, y: 2}));
         }
 
         return coordinates;
@@ -87,6 +95,15 @@ contract SetMerkleRoots is Script {
             0x28047ed34121b81cceb2b9f56917953ba4bef2fa9c3ba9936343c6846009a2a8,
             0xbe3cc57529233275f6526734cde40e0d719022504650320a8908e16d231871db
         );
+        vm.stopBroadcast();
+    }
+}
+
+contract CloseMint is Script {
+    function run() external {
+        vm.startBroadcast();
+        LINE line = LINE(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512);
+        line.closeMint();
         vm.stopBroadcast();
     }
 }

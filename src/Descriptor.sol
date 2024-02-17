@@ -197,7 +197,7 @@ contract Descriptor is ITokenDescriptor, Constants {
         writer = _addStringAttribute(writer, 'Starting Point', string.concat(Strings.toString(token.initial.x), ',', Strings.toString(token.initial.y)));
         writer = _addStringAttribute(writer, 'Has Reached End', token.hasReachedEnd == true ? 'Yes' : 'No');
         writer = _addStringAttribute(writer, 'Is Locked', token.isLocked == true ? 'Yes' : 'No');
-        writer = _addStringAttribute(writer, 'Number of Movements', Strings.toString(token.numMovements));
+        writer = _addStringAttribute(writer, 'Movements', Strings.toString(token.numMovements));
 
         writer = writer.writeEndArray();
     }
