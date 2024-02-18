@@ -331,14 +331,17 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     /// @dev Sets the coordinates that are available to minted.
-    function setInitialAvailableCoordinates(ITokenDescriptor.Coordinate[] calldata positions) external onlyOwner {
-        for (uint256 i = 0; i < positions.length; i++) {
-            ITokenDescriptor.Coordinate memory coordinate = ITokenDescriptor.Coordinate({x: positions[i].x, y: positions[i].y});
-
-            bytes32 hash = _getCoordinateHash(coordinate);
+    function setInitialAvailableCoordinates(ITokenDescriptor.Coordinate[] calldata coordinates) external onlyOwner {
+        uint256 currentNumTokens = _availableCoordinates.length;
+        for (uint256 i = 0; i < coordinates.length;) {
+            bytes32 hash = _getCoordinateHash(coordinates[i]);
             _mintableCoordinates[hash] = true;
-            _coordinateHashToIndex[hash] = i;
-            _availableCoordinates.push(coordinate);
+            _coordinateHashToIndex[hash] = currentNumTokens + i;
+            _availableCoordinates.push(coordinates[i]);
+
+            unchecked {
+                ++i;
+            }
         }
     }
 

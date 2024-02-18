@@ -12,7 +12,19 @@ abstract contract Deploy is Script {
         Descriptor descriptor = new Descriptor();
         LINE line = new LINE(address(descriptor));
 
-        line.setInitialAvailableCoordinates(_getMintableCoordinates());
+        ITokenDescriptor.Coordinate[] memory mintableCoordinates = _getMintableCoordinates();
+
+        uint256 index;
+        for (uint256 i=0; i < 5;i++) {
+            ITokenDescriptor.Coordinate[] memory batch = new ITokenDescriptor.Coordinate[](50);
+
+            for(uint256 j=0; j < 50;j++) {
+                batch[j] = mintableCoordinates[index];
+                index++;
+            }
+            line.setInitialAvailableCoordinates(batch);
+        }
+
         line.updateConfig(
             uint64(1708198200), uint64(1708201800), 1000000000000000000, 1000000000000000, payable(msg.sender)
         );
@@ -20,7 +32,6 @@ abstract contract Deploy is Script {
     }
 
     ITokenDescriptor.Coordinate[] coordinates;
-
     function _getMintableCoordinates() private returns (ITokenDescriptor.Coordinate[] memory) {
         coordinates.push(ITokenDescriptor.Coordinate({x:17, y:7}));
         coordinates.push(ITokenDescriptor.Coordinate({x:11, y:9}));
@@ -292,6 +303,20 @@ contract DeploySepolia is Deploy {
 contract DeployLocal is Deploy {
     function run() external {
         _deploy();
+    }
+}
+
+contract Mint is Script {
+    function run() external {
+        vm.startBroadcast();
+        LINE line = LINE(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512);
+        
+        bytes32[] memory emptyMerkleProof;
+        for(uint256 i=0;i < 20;i++) {
+            line.mintRandom{value: 1000000000000000000}(1, emptyMerkleProof);
+        }
+        
+        vm.stopBroadcast();
     }
 }
 
