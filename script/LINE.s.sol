@@ -24,10 +24,7 @@ abstract contract Deploy is Script {
             }
             line.setInitialAvailableCoordinates(batch);
         }
-
-        line.updateConfig(
-            uint64(1708198200), uint64(1708201800), 1000000000000000000, 1000000000000000, payable(msg.sender)
-        );
+        
         vm.stopBroadcast();
     }
 
@@ -340,8 +337,8 @@ contract SetMerkleRoots is Script {
         vm.startBroadcast();
         LINE line = LINE(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512);
         line.updateMerkleRoots(
-            0x28047ed34121b81cceb2b9f56917953ba4bef2fa9c3ba9936343c6846009a2a8,
-            0xbe3cc57529233275f6526734cde40e0d719022504650320a8908e16d231871db
+            0xbe3cc57529233275f6526734cde40e0d719022504650320a8908e16d231871db,
+            0x2fc992fdf00a41ad350473f4f659e3b912bd0012c3ecca86d7e23cc54f072e18
         );
         vm.stopBroadcast();
     }

@@ -582,12 +582,12 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     function _getDiscountedCurrentPrice(bytes32[] calldata merkleProof, address addressToCheck, uint256 currentPrice) private view returns (uint256) {
-        bool isHolder = checkMerkleProof(merkleProof, addressToCheck, holdersMerkleRoot);
-        bool isFpMember = checkMerkleProof(merkleProof, addressToCheck, fpMembersMerkleRoot);
+        bool isFp = checkMerkleProof(merkleProof, addressToCheck, fpMembersMerkleRoot);
+        bool isPartner = checkMerkleProof(merkleProof, addressToCheck, holdersMerkleRoot);
         
-        if (isHolder) {
+        if (isFp) {
             currentPrice = (currentPrice * 75) / 100; // 25% off
-        } else if (isFpMember) {
+        } else if (isPartner) {
             currentPrice = (currentPrice * 85) / 100; // 15% off
         }
 
