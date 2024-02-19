@@ -59,7 +59,7 @@ contract Descriptor is ITokenDescriptor, Constants {
         uint256 numDaysPassed = (block.timestamp - token.timestamp) / 1 days;
         uint256 numPanoramicPoints;
 
-        if (!token.isLocked) {
+        if (!token.isStar) {
             numPanoramicPoints = 10; // 180° panoramic view
         } else {
             numPanoramicPoints = 16; // 360° panoramic view
@@ -84,7 +84,7 @@ contract Descriptor is ITokenDescriptor, Constants {
         // 11 = southeast
         // 13 = south
         // 15 = southwest
-        if (token.isLocked) {
+        if (token.isStar) {
             if (panoramicPoint == 1) {
                 x = token.current.x - 1;
                 y = token.current.y;
@@ -196,7 +196,7 @@ contract Descriptor is ITokenDescriptor, Constants {
         writer = _addStringAttribute(writer, 'Type', token.direction == Direction.UP ? 'Up' : 'Down');
         writer = _addStringAttribute(writer, 'Starting Point', string.concat(Strings.toString(token.initial.x), ',', Strings.toString(token.initial.y)));
         writer = _addStringAttribute(writer, 'Has Reached End', token.hasReachedEnd == true ? 'Yes' : 'No');
-        writer = _addStringAttribute(writer, 'Is Locked', token.isLocked == true ? 'Yes' : 'No');
+        writer = _addStringAttribute(writer, 'Is Star', token.isStar == true ? 'Yes' : 'No');
         writer = _addStringAttribute(writer, 'Movements', Strings.toString(token.numMovements));
 
         writer = writer.writeEndArray();

@@ -20,6 +20,9 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
+/// @dev Thrown when attempting to change a token to a star, which is already a star.
+error AlreadyStarToken();
+
 /// @dev Thrown when too many tokens are attempted to be minted within a single transaction.
 error ExceedsMaxMintPerTransaction();
 
@@ -38,7 +41,7 @@ error MaxStarTokensReached();
 /// @dev Thrown when attempting to mint a token after minting has closed.
 error MintingClosed();
 
-/// @dev Thrown when attempting to move a token and the ability to move tokens has not started yet.
+/// @dev Thrown when attempting to move a token, and the ability to move tokens has not started yet or is a star token.
 error MovementLocked();
 
 /// @dev Thrown when checking the owner or approved address for a non-existent NFT.
@@ -46,9 +49,6 @@ error NotMinted();
 
 /// @dev Thrown when checking that the caller is not the owner of the NFT.
 error NotTokenOwner();
-
-/// @dev Thrown when attempting to move a token that is already locked and is a star token.
-error OriginPointLocked();
 
 /// @dev Thrown when attempting to move a token to a place on the grid that is already taken.
 error PositionCurrentlyTaken(uint256 x, uint256 y);
@@ -294,7 +294,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
     }
 
     /// @dev Converts a token to be a star token and locks their token at the given position.
-    function lockOriginPoint(uint256 tokenId, uint256 x, uint256 y) external {
+    function lockAsStar(uint256 tokenId, uint256 x, uint256 y) external {
         if (msg.sender != ownerOf(tokenId)) {
             revert NotTokenOwner();
         }
@@ -317,8 +317,8 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             revert HasNotReachedEnd();
         }
         
-        if (token.isLocked) {
-            revert OriginPointLocked();
+        if (token.isStar) {
+            revert AlreadyStarToken();
         }
 
         _grid[_calculateYGridIndex(token.current.y)][token.current.x] = 0;
@@ -326,7 +326,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
 
         tokenIdToTokenInfo[tokenId].current = ITokenDescriptor.Coordinate({x: x, y: y});
         tokenIdToTokenInfo[tokenId].timestamp = block.timestamp;
-        tokenIdToTokenInfo[tokenId].isLocked = true;
+        tokenIdToTokenInfo[tokenId].isStar = true;
         numStarTokens++;
     }
 
@@ -504,7 +504,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
             current: ITokenDescriptor.Coordinate({x: x, y: y}),
             timestamp: block.timestamp,
             hasReachedEnd: false,
-            isLocked: false,
+            isStar: false,
             direction: y >= 12 ? ITokenDescriptor.Direction.DOWN : ITokenDescriptor.Direction.UP,
             numMovements: 0
         });
@@ -532,8 +532,8 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         }
 
         ITokenDescriptor.Token memory token = tokenIdToTokenInfo[tokenId];
-        if (token.isLocked) {
-            revert OriginPointLocked();
+        if (token.isStar) {
+            revert MovementLocked();
         }
 
         uint256 x = token.current.x;
