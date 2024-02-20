@@ -123,7 +123,7 @@ contract LINE is ERC721, Ownable2Step, ReentrancyGuard, Constants {
         config.endTime = uint64(1708538400 + 3600);
         config.startPriceInWei = 1000000000000000000; // 1 eth
         config.endPriceInWei = 150000000000000000; // .15 eth
-        config.fundsRecipient = payable(msg.sender);
+        config.fundsRecipient = payable(0x943ccdd95803e35369Ccf42e9618f992fD2Fea2E);
     }
     
     /// @dev Mints a token at a random position on the grid.
